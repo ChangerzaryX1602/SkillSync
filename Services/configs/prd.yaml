@@ -1,0 +1,48 @@
+app:
+  name: "gofiber-skeleton"
+  env: "production"
+  port:
+    http: 8080
+    https: 8443
+  path:
+    cert: "./internal/assets/dev/tls/zercle-dev.crt"
+    priv: "./internal/assets/dev/tls/zercle-dev.key"
+    ca: "./internal/assets/dev/tls/rootCA.crt"
+    log: "./log"
+  embedding_key: "AIzaSyBBL3dwNlfAhpJ33_VpOCr7uHEfoUyJQeI"
+
+db:
+  mariadb:
+    sock: "/var/run/mysqld/mysqld.sock"
+    host: "localhost"
+    port: 3306
+    username: ""
+    password: ""
+    db_name: ""
+    conn:
+      min: 1
+      max: 2
+  postgres:
+    sock: "/var/run/postgresql"
+    host: "SkillSync-postgres"
+    port: 5432
+    username: "postgres"
+    password: "SkillSyncPassword"
+    db_name: "postgres"
+    conn:
+      min: 2
+      max: 10
+  sqlite:
+    db_name: "file:app.db?cache=shared"
+  redis:
+    host: "SkillSync-redis"
+    port: 6379
+    username: ""
+    password: ""
+    db_name: 0
+
+jwt:
+  # openssl ecparam -name prime256v1 -genkey -noout -out ./Services/internal/assets/prd/jwt/privkey.pem
+  private: "./internal/assets/prd/jwt/privkey.pem"
+  # openssl ec -in ./Services/internal/assets/prd/jwt/privkey.pem -pubout -out ./Services/internal/assets/prd/jwt/pubkey.pem
+  public: "./internal/assets/prd/jwt/pubkey.pem"

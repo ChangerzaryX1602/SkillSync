@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: SkillSync-postgres
+    environment:
+      POSTGRES_PASSWORD: SkillSyncPassword
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - skillsync
+  redis:
+    image: redis:7-alpine
+    container_name: SkillSync-redis
+    ports:
+      - "16379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - skillsync
+  server:
+    build:
+      context: ./Services
+      dockerfile: cmd/server/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=prd
+    volumes:
+      - ./Services/configs/prd.yaml:/app/configs/prd.yaml
+      - ./Services/internal/assets/prd:/app/internal/assets/prd
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - skillsync
+
+networks:
+  skillsync:
+    name: skillsync
+    driver: bridge
+    external: true
