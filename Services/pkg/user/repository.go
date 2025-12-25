@@ -21,7 +21,17 @@ func NewUserRepository(resources models.Resources) domain.UserRepository {
 	return &userRepository{resources: resources}
 }
 func (r *userRepository) Migrate() error {
-	return r.resources.MainDbConn.AutoMigrate(&models.User{})
+	if err := r.resources.MainDbConn.AutoMigrate(&models.User{}); err != nil {
+		return err
+	}
+	if err := r.resources.MainDbConn.Exec(`
+    CREATE INDEX IF NOT EXISTS idx_users_embedding 
+    ON users 
+    USING hnsw (embedding vector_cosine_ops)
+`).Error; err != nil {
+		return err
+	}
+	return nil
 }
 func (r *userRepository) CreateUser(user models.User) *helpers.ResponseError {
 	searchContext := fmt.Sprintf("%s %s", user.Username, user.Email)

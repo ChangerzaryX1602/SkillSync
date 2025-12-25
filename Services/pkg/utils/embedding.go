@@ -19,10 +19,13 @@ func GenerateEmbedding(text string, embeddingKey string) ([]float32, error) {
 	contents := []*genai.Content{
 		genai.NewContentFromText(text, genai.RoleUser),
 	}
+	var OutputDimensionality int32 = 768
 	result, err := client.Models.EmbedContent(ctx,
 		"gemini-embedding-001",
 		contents,
-		nil,
+		&genai.EmbedContentConfig{
+			OutputDimensionality: &OutputDimensionality,
+		},
 	)
 	if err != nil {
 		log.Fatal(err)
