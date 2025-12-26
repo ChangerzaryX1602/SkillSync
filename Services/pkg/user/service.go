@@ -33,7 +33,7 @@ func (s *userService) CreateUser(ctx context.Context, user models.User) []helper
 				Code:    400,
 				Source:  helpers.WhereAmI(),
 				Title:   "Bad Request",
-				Message: "Invalid email format",
+				Message: "Invalid email format or password temp is empty",
 			},
 		}
 	}
