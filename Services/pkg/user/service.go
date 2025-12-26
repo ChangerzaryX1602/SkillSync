@@ -7,6 +7,7 @@ import (
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 	txcontext "github.com/ChangerzaryX1602/SkillSync/pkg/tx_context"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
+	"github.com/gofiber/fiber/v2"
 
 	helpers "github.com/zercle/gofiber-helpers"
 )
@@ -30,7 +31,7 @@ func (s *userService) CreateUser(ctx context.Context, user models.User) []helper
 	if !utils.IsValidEmail(user.Email) || user.PasswordTemp == "" {
 		return []helpers.ResponseError{
 			{
-				Code:    400,
+				Code:    fiber.StatusBadRequest,
 				Source:  helpers.WhereAmI(),
 				Title:   "Bad Request",
 				Message: "Invalid email format or password temp is empty",
@@ -83,7 +84,7 @@ func (s *userService) UpdateUser(ctx context.Context, id uint, user models.User)
 		if !utils.IsValidEmail(user.Email) {
 			return []helpers.ResponseError{
 				{
-					Code:    400,
+					Code:    fiber.StatusBadRequest,
 					Source:  helpers.WhereAmI(),
 					Title:   "Bad Request",
 					Message: "Invalid email format",
@@ -108,7 +109,7 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*models
 	if !utils.IsValidEmail(email) {
 		return nil, []helpers.ResponseError{
 			{
-				Code:    400,
+				Code:    fiber.StatusBadRequest,
 				Source:  helpers.WhereAmI(),
 				Title:   "Bad Request",
 				Message: "Invalid email format",

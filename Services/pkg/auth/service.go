@@ -8,6 +8,7 @@ import (
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
+	"github.com/gofiber/fiber/v2"
 
 	"github.com/golang-jwt/jwt/v4"
 	helpers "github.com/zercle/gofiber-helpers"
@@ -25,7 +26,7 @@ func (s *authService) Login(ctx context.Context, user models.User, host string) 
 	if !utils.IsValidEmail(user.Email) {
 		return nil, nil, []helpers.ResponseError{
 			{
-				Code:    400,
+				Code:    fiber.StatusBadRequest,
 				Source:  helpers.WhereAmI(),
 				Title:   "Bad Request",
 				Message: "Invalid email format",
