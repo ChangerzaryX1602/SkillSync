@@ -7,5 +7,5 @@ type Search struct {
 }
 
 func (s *Search) GetSearchString() string {
-	return "keyword:" + s.Keyword + ":column:" + s.Column + ":text:" + s.Text
+	return "keyword=" + s.Keyword + "&column=" + s.Column + "&text=" + s.Text
 }

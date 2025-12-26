@@ -21,14 +21,6 @@ func NewAuthRepository(resources models.Resources) domain.AuthRepository {
 	return &authRepository{resources: resources}
 }
 func (r *authRepository) SignToken(ctx context.Context, user models.User, host string, ttl time.Duration) (string, *helpers.ResponseError) {
-	if ctx.Err() != nil {
-		return "", &helpers.ResponseError{
-			Code:    fiber.StatusInternalServerError,
-			Source:  helpers.WhereAmI(),
-			Title:   "Context Error",
-			Message: ctx.Err().Error(),
-		}
-	}
 	token := jwt.NewWithClaims(r.resources.JwtResources.JwtSigningMethod, &jwt.RegisteredClaims{})
 	claims := token.Claims.(*jwt.RegisteredClaims)
 	claims.Subject = fmt.Sprintf("%d", user.ID)
@@ -60,14 +52,6 @@ func (r *authRepository) SaveRefreshToken(ctx context.Context, userID uint, toke
 }
 
 func (r *authRepository) GetRefreshToken(ctx context.Context, userID uint) (string, *helpers.ResponseError) {
-	if ctx.Err() != nil {
-		return "", &helpers.ResponseError{
-			Code:    fiber.StatusInternalServerError,
-			Source:  helpers.WhereAmI(),
-			Title:   "Context Error",
-			Message: ctx.Err().Error(),
-		}
-	}
 	key := fmt.Sprintf("refresh:%d", userID)
 	tokenBytes, err := r.resources.RedisStorage.Get(key)
 	if err != nil {

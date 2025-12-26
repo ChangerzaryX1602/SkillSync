@@ -151,8 +151,10 @@ func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *h
 }
 func (r *userRepository) GetUsers(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, *helpers.ResponseError) {
 	if users, found := r.cache.GetList(pagination, search); found {
+		fmt.Println("CACHE HITT")
 		return users, &pagination, &search, nil
 	}
+	fmt.Println("CACHE MISS")
 	var users []models.User
 	db := r.getDB(ctx)
 	db = db.WithContext(ctx).Model(&models.User{})

@@ -19,8 +19,14 @@ func vectorToString(vec []float32) string {
 	return "[" + strings.Join(strValues, ",") + "]"
 }
 func ApplySearch(ctx context.Context, client *fasthttp.Client, db *gorm.DB, filter models.Search, IsUseEmbedding bool, embbedKey ...string) *gorm.DB {
-	if filter.Keyword == "" {
-		return db
+	if !IsUseEmbedding {
+		if filter.Keyword == "" || filter.Column == "" {
+			return db
+		}
+	} else {
+		if filter.Keyword == "" {
+			return db
+		}
 	}
 	if !IsUseEmbedding {
 		columns := strings.Split(filter.Column, ",")
@@ -46,24 +52,8 @@ func ApplySearch(ctx context.Context, client *fasthttp.Client, db *gorm.DB, filt
 		if err == nil {
 			return db.Order(fmt.Sprintf("embedding <=> '%s'", vectorToString(vec)))
 		} else {
-			columns := strings.Split(filter.Column, ",")
-			var query string
-
-			if len(columns) > 0 {
-				var args []interface{}
-
-				for _, column := range columns {
-					if query != "" {
-						query += " OR "
-					}
-					query += fmt.Sprintf("%s ILIKE ?", column)
-					args = append(args, "%"+filter.Keyword+"%")
-				}
-
-				return db.Where(query, args...)
-			} else {
-				return db.Where(fmt.Sprintf("%s ILIKE ?", filter.Column), "%"+filter.Keyword+"%")
-			}
+			fmt.Println("error embedding", err)
+			return db
 		}
 	}
 }

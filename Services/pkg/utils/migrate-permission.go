@@ -103,6 +103,10 @@ func MigratePermission(db *gorm.DB) error {
 				{Group: string(models.PermissionGroup), Name: string(models.Me)},
 			},
 		},
+		// Banned - No access
+		{
+			Role: models.Role{Name: string(Banned)},
+		},
 	})
 
 	return err
@@ -157,6 +161,7 @@ type RolePermission struct {
 type Role string
 
 const (
-	Admin Role = "Admin"
-	User  Role = "User"
+	Admin  Role = "Admin"
+	User   Role = "User"
+	Banned Role = "Banned"
 )

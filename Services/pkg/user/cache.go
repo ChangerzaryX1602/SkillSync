@@ -103,7 +103,7 @@ func (c *userCache) GetList(pagination models.Pagination, search models.Search) 
 		return nil, false
 	}
 	key := fmt.Sprintf("%s:%s:%s", models.PkgUserGetUsers, pagination.GetPaginationString(), search.GetSearchString())
-
+	fmt.Println("key get", key)
 	bytes, err := c.store.Get(key)
 	if err != nil || len(bytes) == 0 {
 		return nil, false
@@ -111,6 +111,7 @@ func (c *userCache) GetList(pagination models.Pagination, search models.Search) 
 
 	var users []models.User
 	if err := json.Unmarshal(bytes, &users); err != nil {
+		fmt.Println("err", err)
 		return nil, false
 	}
 	return users, true
@@ -120,10 +121,14 @@ func (c *userCache) SetList(pagination models.Pagination, search models.Search, 
 	if c.store == nil {
 		return
 	}
-	go func(us []models.User) {
-		key := fmt.Sprintf("%s:%s:%s", models.PkgUserGetUsers, pagination.GetPaginationString(), search.GetSearchString())
+	go func(us []models.User, p models.Pagination, s models.Search) {
+		key := fmt.Sprintf("%s:%s:%s", models.PkgUserGetUsers, p.GetPaginationString(), s.GetSearchString())
 		if bytes, err := json.Marshal(us); err == nil {
-			_ = c.store.Set(key, bytes, utils.RandomJitter(cacheTTLList))
+			fmt.Println("key set", key)
+			err = c.store.Set(key, bytes, utils.RandomJitter(cacheTTLList))
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
-	}(users)
+	}(users, pagination, search)
 }

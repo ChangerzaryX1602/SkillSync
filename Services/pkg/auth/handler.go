@@ -55,7 +55,7 @@ func (h *authHandler) Login() fiber.Handler {
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success":       true,
-			"token":         token,
+			"access_token":  token,
 			"refresh_token": refreshToken,
 		})
 	}
@@ -110,7 +110,7 @@ func (h *authHandler) RefreshToken() fiber.Handler {
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"success":       true,
-			"token":         token,
+			"access_token":  token,
 			"refresh_token": refreshToken,
 		})
 	}

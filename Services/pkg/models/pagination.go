@@ -1,5 +1,7 @@
 package models
 
+import "fmt"
+
 type Pagination struct {
 	Page    int    `query:"page" json:"page"`
 	PerPage int    `query:"per_page" json:"per_page"`
@@ -9,5 +11,11 @@ type Pagination struct {
 }
 
 func (p *Pagination) GetPaginationString() string {
-	return "page:" + string(rune(p.Page)) + ":per_page:" + string(rune(p.PerPage)) + ":order_by:" + p.OrderBy + ":order:" + p.Order
+	if p.Page < 1 {
+		p.Page = 1
+	}
+	if p.PerPage < 1 || p.PerPage > 1000 {
+		p.PerPage = 10
+	}
+	return fmt.Sprintf("page=%d&per_page=%d&order_by=%s&order=%s", p.Page, p.PerPage, p.OrderBy, p.Order)
 }
