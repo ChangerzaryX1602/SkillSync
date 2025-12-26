@@ -1,0 +1,830 @@
+basePath: /api/v1
+definitions:
+  models.Permission:
+    properties:
+      created_at:
+        type: string
+      group:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Role:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.RolePermission:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      permission_id:
+        type: integer
+      role_id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.User:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  models.UserRole:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      role_id:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server for Test Services.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: SkillSync API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password
+      parameters:
+      - description: User Login Credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses: {}
+      summary: Login to the application
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using refresh token
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: refresh_token
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses: {}
+      summary: Refresh access token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: User Registration Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses: {}
+      summary: Register a new user
+      tags:
+      - Auth
+  /permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get all permissions with pagination and search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Order by field
+        in: query
+        name: order_by
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sort_by
+        type: string
+      - description: Search keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Search column
+        in: query
+        name: column
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all permissions
+      tags:
+      - Permission
+    post:
+      consumes:
+      - application/json
+      description: Create a new permission
+      parameters:
+      - description: Permission Data
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/models.Permission'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Create a new permission
+      tags:
+      - Permission
+  /permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a permission by ID
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete a permission
+      tags:
+      - Permission
+    get:
+      consumes:
+      - application/json
+      description: Get a permission by ID
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get a permission by ID
+      tags:
+      - Permission
+    put:
+      consumes:
+      - application/json
+      description: Update a permission by ID
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Permission Data
+        in: body
+        name: permission
+        required: true
+        schema:
+          $ref: '#/definitions/models.Permission'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update a permission
+      tags:
+      - Permission
+  /permissions/me:
+    get:
+      consumes:
+      - application/json
+      description: Get permissions for the authenticated user
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get my permissions
+      tags:
+      - Permission
+  /role_permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get all role permissions with pagination and search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Order by field
+        in: query
+        name: order_by
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sort_by
+        type: string
+      - description: Search keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Search column
+        in: query
+        name: column
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all role permissions
+      tags:
+      - RolePermission
+    post:
+      consumes:
+      - application/json
+      description: Create a new role permission
+      parameters:
+      - description: RolePermission Data
+        in: body
+        name: rolePermission
+        required: true
+        schema:
+          $ref: '#/definitions/models.RolePermission'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Create a new role permission
+      tags:
+      - RolePermission
+  /role_permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role permission by ID
+      parameters:
+      - description: RolePermission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete a role permission
+      tags:
+      - RolePermission
+    get:
+      consumes:
+      - application/json
+      description: Get a role permission by ID
+      parameters:
+      - description: RolePermission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get a role permission by ID
+      tags:
+      - RolePermission
+    put:
+      consumes:
+      - application/json
+      description: Update a role permission by ID
+      parameters:
+      - description: RolePermission ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: RolePermission Data
+        in: body
+        name: rolePermission
+        required: true
+        schema:
+          $ref: '#/definitions/models.RolePermission'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update a role permission
+      tags:
+      - RolePermission
+  /role_permissions/role/{roleId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete role permissions by Role ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete role permissions by Role ID
+      tags:
+      - RolePermission
+    get:
+      consumes:
+      - application/json
+      description: Get role permissions by Role ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get role permissions by Role ID
+      tags:
+      - RolePermission
+  /roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all roles with pagination and search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Order by field
+        in: query
+        name: order_by
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sort_by
+        type: string
+      - description: Search keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Search column
+        in: query
+        name: column
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all roles
+      tags:
+      - Role
+    post:
+      consumes:
+      - application/json
+      description: Create a new role
+      parameters:
+      - description: Role Data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/models.Role'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Create a new role
+      tags:
+      - Role
+  /roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role by ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete a role
+      tags:
+      - Role
+    get:
+      consumes:
+      - application/json
+      description: Get a role by ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get a role by ID
+      tags:
+      - Role
+    put:
+      consumes:
+      - application/json
+      description: Update a role by ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role Data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/models.Role'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update a role
+      tags:
+      - Role
+  /user_roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all user roles with pagination and search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Order by field
+        in: query
+        name: order_by
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sort_by
+        type: string
+      - description: Search keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Search column
+        in: query
+        name: column
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all user roles
+      tags:
+      - UserRole
+    post:
+      consumes:
+      - application/json
+      description: Create a new user role
+      parameters:
+      - description: UserRole Data
+        in: body
+        name: userRole
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserRole'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Create a new user role
+      tags:
+      - UserRole
+  /user_roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user role by ID
+      parameters:
+      - description: UserRole ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete a user role
+      tags:
+      - UserRole
+    get:
+      consumes:
+      - application/json
+      description: Get a user role by ID
+      parameters:
+      - description: UserRole ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get a user role by ID
+      tags:
+      - UserRole
+    put:
+      consumes:
+      - application/json
+      description: Update a user role by ID
+      parameters:
+      - description: UserRole ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: UserRole Data
+        in: body
+        name: userRole
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserRole'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update a user role
+      tags:
+      - UserRole
+  /user_roles/user/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user roles by User ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete user roles by User ID
+      tags:
+      - UserRole
+    get:
+      consumes:
+      - application/json
+      description: Get user roles by User ID
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get user roles by User ID
+      tags:
+      - UserRole
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users with pagination and search
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Order by field
+        in: query
+        name: order_by
+        type: string
+      - description: Sort order (asc/desc)
+        in: query
+        name: sort_by
+        type: string
+      - description: Search keyword
+        in: query
+        name: keyword
+        type: string
+      - description: Search column
+        in: query
+        name: column
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get all users
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      description: Create a new user
+      parameters:
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Create a new user
+      tags:
+      - User
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Delete a user
+      tags:
+      - User
+    get:
+      consumes:
+      - application/json
+      description: Get a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get a user by ID
+      tags:
+      - User
+    patch:
+      consumes:
+      - application/json
+      description: Update a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Update a user by ID
+      tags:
+      - User
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Get current user
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - User
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/storage/redis"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/hibiken/asynq"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
@@ -20,6 +21,7 @@ type Resources struct {
 	RedisStorage   *redis.Storage
 	JwtResources   *JwtResources
 	SessConfig     session.Config
+	AsynqClient    *asynq.Client
 	EmbeddingKey   string
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/ChangerzaryX1602/SkillSync/pkg/logs"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
+	"github.com/hibiken/asynq"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -63,6 +64,12 @@ func NewServer(version, buildTag, runEnv string) (server *Server, err error) {
 	if err != nil {
 		return
 	}
+	redisOpt := asynq.RedisClientOpt{
+		Addr: viper.GetString("db.redis.host") + ":" + string(rune(viper.GetInt("db.redis.port"))),
+	}
+
+	asynqClient := asynq.NewClient(redisOpt)
+	defer asynqClient.Close()
 
 	fastHTTPClient := datasources.NewFastHTTPClient(true)
 
@@ -74,7 +81,7 @@ func NewServer(version, buildTag, runEnv string) (server *Server, err error) {
 	}
 
 	// init app resources
-	server.Resources = NewResources(fastHTTPClient, mainDbConn, nil, redisStorage, jwtResources, viper.GetString("app.embedding_key"))
+	server.Resources = NewResources(fastHTTPClient, mainDbConn, nil, redisStorage, asynqClient, jwtResources, viper.GetString("app.embedding_key"))
 
 	// something that use resources place here
 

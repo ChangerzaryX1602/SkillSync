@@ -8,17 +8,19 @@ import (
 
 	"github.com/gofiber/storage/redis"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/hibiken/asynq"
 	"github.com/valyala/fasthttp"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
-func NewResources(fasthttpClient *fasthttp.Client, mainDbConn *gorm.DB, logDbConn *mongo.Database, redisStorage *redis.Storage, jwtResources *models.JwtResources, embbedingKey string) models.Resources {
+func NewResources(fasthttpClient *fasthttp.Client, mainDbConn *gorm.DB, logDbConn *mongo.Database, redisStorage *redis.Storage, asynqClient *asynq.Client, jwtResources *models.JwtResources, embbedingKey string) models.Resources {
 	return models.Resources{
 		FastHTTPClient: fasthttpClient,
 		MainDbConn:     mainDbConn,
 		LogDbConn:      logDbConn,
 		RedisStorage:   redisStorage,
+		AsynqClient:    asynqClient,
 		JwtResources:   jwtResources,
 		EmbeddingKey:   embbedingKey,
 	}
