@@ -19,6 +19,15 @@ services:
       - ./data/redis:/data
     networks:
       - skillsync
+  ollama:
+    image: ollama/ollama:latest
+    container_name: SkillSync-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./data/ollama:/root/.ollama
+    networks:
+      - skillsync
   server:
     build:
       context: ./Services

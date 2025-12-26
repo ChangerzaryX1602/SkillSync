@@ -35,7 +35,7 @@ func (r *userRepository) Migrate() error {
 }
 func (r *userRepository) CreateUser(user models.User) *helpers.ResponseError {
 	searchContext := fmt.Sprintf("%s %s", user.Username, user.Email)
-	vec, err := utils.GenerateEmbedding(searchContext, r.resources.EmbeddingKey)
+	vec, err := utils.GenerateEmbeddingByOllama(searchContext)
 	if err != nil {
 		fmt.Printf("Error generating embedding: %v\n", err)
 	} else {

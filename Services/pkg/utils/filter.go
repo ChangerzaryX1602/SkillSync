@@ -20,7 +20,7 @@ func ApplySearch(db *gorm.DB, filter models.Search, IsUseEmbedding bool, embbedK
 	if filter.Keyword == "" {
 		return db
 	}
-	if len(embbedKey) == 0 || !IsUseEmbedding {
+	if !IsUseEmbedding {
 		columns := strings.Split(filter.Column, ",")
 		var query string
 
@@ -40,7 +40,7 @@ func ApplySearch(db *gorm.DB, filter models.Search, IsUseEmbedding bool, embbedK
 			return db.Where(fmt.Sprintf("%s ILIKE ?", filter.Column), "%"+filter.Keyword+"%")
 		}
 	} else {
-		vec, err := GenerateEmbedding(filter.Keyword, embbedKey[0])
+		vec, err := GenerateEmbeddingByOllama(filter.Keyword)
 		if err == nil {
 			return db.Order(fmt.Sprintf("embedding <=> '%s'", vectorToString(vec)))
 		} else {
