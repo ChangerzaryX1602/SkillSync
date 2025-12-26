@@ -9,5 +9,5 @@ type Pagination struct {
 }
 
 func (p *Pagination) GetPaginationString() string {
-	return "page=" + string(rune(p.Page)) + "&per_page=" + string(rune(p.PerPage)) + "&order_by=" + p.OrderBy + "&order=" + p.Order
+	return "page:" + string(rune(p.Page)) + ":per_page:" + string(rune(p.PerPage)) + ":order_by:" + p.OrderBy + ":order:" + p.Order
 }

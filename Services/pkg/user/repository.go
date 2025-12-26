@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
@@ -17,10 +16,11 @@ import (
 
 type userRepository struct {
 	resources models.Resources
+	cache     *userCache
 }
 
 func NewUserRepository(resources models.Resources) domain.UserRepository {
-	return &userRepository{resources: resources}
+	return &userRepository{resources: resources, cache: newUserCache(resources.RedisStorage)}
 }
 func (r *userRepository) Migrate() error {
 	if err := r.resources.MainDbConn.AutoMigrate(&models.User{}); err != nil {
@@ -38,9 +38,7 @@ func (r *userRepository) Migrate() error {
 func (r *userRepository) CreateUser(ctx context.Context, user models.User) *helpers.ResponseError {
 	db := r.getDB(ctx)
 	vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, user.GenerateSearchContext())
-	if err != nil {
-		fmt.Printf("Error generating embedding: %v\n", err)
-	} else {
+	if err == nil {
 		user.Embedding = pgvector.NewVector(vec)
 	}
 
@@ -55,6 +53,9 @@ func (r *userRepository) CreateUser(ctx context.Context, user models.User) *help
 	return nil
 }
 func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *helpers.ResponseError) {
+	if userCache, ok := r.cache.Get(id); ok {
+		return userCache, nil
+	}
 	var user models.User
 	db := r.getDB(ctx)
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
@@ -73,9 +74,13 @@ func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *h
 			Message: err.Error(),
 		}
 	}
+	r.cache.Set(&user)
 	return &user, nil
 }
 func (r *userRepository) GetUsers(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, *helpers.ResponseError) {
+	if users, found := r.cache.GetList(pagination, search); found {
+		return users, &pagination, &search, nil
+	}
 	var users []models.User
 	db := r.getDB(ctx)
 	db = db.WithContext(ctx).Model(&models.User{})
@@ -105,17 +110,15 @@ func (r *userRepository) GetUsers(ctx context.Context, pagination models.Paginat
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetList(pagination, search, users)
 	return users, &pagination, &search, nil
 }
 func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.User) *helpers.ResponseError {
 	db := r.getDB(ctx)
 	vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, user.GenerateSearchContext())
-	if err != nil {
-		fmt.Printf("Error generating embedding: %v\n", err)
-	} else {
+	if err == nil {
 		user.Embedding = pgvector.NewVector(vec)
 	}
-
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.User{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
@@ -140,6 +143,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 			Message: err.Error(),
 		}
 	}
+	r.cache.Invalidate(id)
 	return nil
 }
 func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.ResponseError {
@@ -168,9 +172,13 @@ func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.Respo
 			Message: err.Error(),
 		}
 	}
+	r.cache.Invalidate(id)
 	return nil
 }
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, *helpers.ResponseError) {
+	if user, found := r.cache.GetByEmail(email); found {
+		return user, nil
+	}
 	db := r.getDB(ctx)
 	var user models.User
 	if err := db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
@@ -189,6 +197,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetByEmail(email, &user)
 	return &user, nil
 }
 func (r *userRepository) getDB(ctx context.Context) *gorm.DB {
