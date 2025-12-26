@@ -143,12 +143,13 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 			Message: err.Error(),
 		}
 	}
-	r.cache.Invalidate(id)
+	r.cache.Invalidate(id, user.Email)
 	return nil
 }
 func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.ResponseError {
 	db := r.getDB(ctx)
-	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.User{}).Error; err != nil {
+	var user models.User
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -172,7 +173,7 @@ func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.Respo
 			Message: err.Error(),
 		}
 	}
-	r.cache.Invalidate(id)
+	r.cache.Invalidate(id, user.Email)
 	return nil
 }
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, *helpers.ResponseError) {

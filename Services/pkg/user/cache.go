@@ -52,12 +52,16 @@ func (c *userCache) Set(user *models.User) {
 	}(*user)
 }
 
-func (c *userCache) Invalidate(id uint) {
+func (c *userCache) Invalidate(id uint, email string) {
 	if c.store == nil {
 		return
 	}
 	go func() {
 		key := fmt.Sprintf("%s:%d", models.PkgUserGetUser, id)
+		_ = c.store.Delete(key)
+	}()
+	go func() {
+		key := fmt.Sprintf("%s:%s", models.PkgUserGetUserGmail, email)
 		_ = c.store.Delete(key)
 	}()
 }
