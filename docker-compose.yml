@@ -22,6 +22,8 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: SkillSync-ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
     ports:
       - "11434:11434"
     volumes:
@@ -44,6 +46,19 @@ services:
       - redis
     networks:
       - skillsync
+  # web:
+  #   build:
+  #     context: ./web
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - ORIGIN=http://localhost:3000
+  #     - PUBLIC_API_URL=http://server:8080
+  #   depends_on:
+  #     - server
+  #   networks:
+  #     - skillsync
 
 networks:
   skillsync:

@@ -14,6 +14,7 @@ func MigratePermission(db *gorm.DB) error {
 		{Group: string(models.UserGroup), Name: string(models.Update)},
 		{Group: string(models.UserGroup), Name: string(models.Delete)},
 		{Group: string(models.UserGroup), Name: string(models.List)},
+		{Group: string(models.UserGroup), Name: string(models.Me)},
 		// Role permissions
 		{Group: string(models.RoleGroup), Name: string(models.Create)},
 		{Group: string(models.RoleGroup), Name: string(models.Read)},
@@ -64,6 +65,7 @@ func MigratePermission(db *gorm.DB) error {
 				{Group: string(models.UserGroup), Name: string(models.Update)},
 				{Group: string(models.UserGroup), Name: string(models.Delete)},
 				{Group: string(models.UserGroup), Name: string(models.List)},
+				{Group: string(models.UserGroup), Name: string(models.Me)},
 				// Role permissions
 				{Group: string(models.RoleGroup), Name: string(models.Create)},
 				{Group: string(models.RoleGroup), Name: string(models.Read)},

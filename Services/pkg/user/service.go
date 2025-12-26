@@ -40,7 +40,8 @@ func (s *userService) CreateUser(ctx context.Context, user models.User) []helper
 	}
 	var errCreate []helpers.ResponseError
 	err := s.txManager.WithTransaction(ctx, func(txCtx context.Context) []helpers.ResponseError {
-		if err := s.repository.CreateUser(txCtx, user); err != nil {
+		response, err := s.repository.CreateUser(txCtx, user)
+		if err != nil {
 			errCreate = append(errCreate, *err)
 			return errCreate
 		}
@@ -49,9 +50,8 @@ func (s *userService) CreateUser(ctx context.Context, user models.User) []helper
 			errCreate = append(errCreate, *err)
 			return errCreate
 		}
-
 		userRole := models.UserRole{
-			UserID: user.ID,
+			UserID: response.ID,
 			RoleID: role.ID,
 		}
 		if err := s.userRoleRepository.CreateUserRole(txCtx, userRole); err != nil {

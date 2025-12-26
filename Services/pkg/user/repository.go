@@ -85,18 +85,19 @@ func (r *userRepository) retryEmbedding() {
 		log.Fatal(err)
 	}
 }
-func (r *userRepository) CreateUser(ctx context.Context, user models.User) *helpers.ResponseError {
+func (r *userRepository) CreateUser(ctx context.Context, user models.User) (*models.User, *helpers.ResponseError) {
 	db := r.getDB(ctx)
 	vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, user.GenerateSearchContext())
 	embeddingFailed := false
 	if err == nil {
 		user.Embedding = pgvector.NewVector(vec)
 	} else {
+		fmt.Println("Embedding failed:", err)
 		embeddingFailed = true
 	}
 
 	if err := db.WithContext(ctx).Create(&user).Error; err != nil {
-		return &helpers.ResponseError{
+		return nil, &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
 			Title:   "Database Error",
@@ -112,7 +113,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user models.User) *help
 		task := asynq.NewTask("generate_embedding", payload)
 		info, err := r.resources.AsynqClient.Enqueue(task)
 		if err != nil {
-			return &helpers.ResponseError{
+			return nil, &helpers.ResponseError{
 				Code:    fiber.StatusInternalServerError,
 				Source:  helpers.WhereAmI(),
 				Title:   "Asynq Error",
@@ -122,7 +123,7 @@ func (r *userRepository) CreateUser(ctx context.Context, user models.User) *help
 		fmt.Printf(" [x] Enqueued task: id=%s queue=%s\n", info.ID, info.Queue)
 	}
 
-	return nil
+	return &user, nil
 }
 func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *helpers.ResponseError) {
 	if userCache, ok := r.cache.Get(id); ok {
@@ -272,9 +273,6 @@ func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.Respo
 	return nil
 }
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, *helpers.ResponseError) {
-	if user, found := r.cache.GetByEmail(email); found {
-		return user, nil
-	}
 	db := r.getDB(ctx)
 	var user models.User
 	if err := db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
@@ -293,7 +291,6 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 			Message: err.Error(),
 		}
 	}
-	r.cache.SetByEmail(email, &user)
 	return &user, nil
 }
 func (r *userRepository) getDB(ctx context.Context) *gorm.DB {

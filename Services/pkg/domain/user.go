@@ -10,7 +10,7 @@ import (
 
 type UserRepository interface {
 	Migrate() error
-	CreateUser(ctx context.Context, user models.User) *helpers.ResponseError
+	CreateUser(ctx context.Context, user models.User) (*models.User, *helpers.ResponseError)
 	GetUser(ctx context.Context, id uint) (*models.User, *helpers.ResponseError)
 	GetUsers(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, *helpers.ResponseError)
 	UpdateUser(ctx context.Context, id uint, user models.User) *helpers.ResponseError
