@@ -15,10 +15,11 @@ import (
 
 type rolePermissionRepository struct {
 	resources models.Resources
+	cache     *rolePermissionCache
 }
 
 func NewRolePermissionRepository(resources models.Resources) domain.RolePermissionRepository {
-	return &rolePermissionRepository{resources: resources}
+	return &rolePermissionRepository{resources: resources, cache: newRolePermissionCache(resources.RedisStorage)}
 }
 
 func (r *rolePermissionRepository) Migrate() error {
@@ -35,6 +36,7 @@ func (r *rolePermissionRepository) CreateRolePermission(ctx context.Context, rol
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByRoleID(rolePermission.RoleID)
 	return nil
 }
 
@@ -86,6 +88,9 @@ func (r *rolePermissionRepository) GetRolePermissions(ctx context.Context, pagin
 }
 
 func (r *rolePermissionRepository) GetRolePermissionsByRoleID(ctx context.Context, roleID uint) ([]models.RolePermission, *helpers.ResponseError) {
+	if rolePermissions, found := r.cache.GetByRoleID(roleID); found {
+		return rolePermissions, nil
+	}
 	db := r.getDB(ctx)
 	var rolePermissions []models.RolePermission
 	if err := db.WithContext(ctx).Where("role_id = ?", roleID).Find(&rolePermissions).Error; err != nil {
@@ -96,6 +101,7 @@ func (r *rolePermissionRepository) GetRolePermissionsByRoleID(ctx context.Contex
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetByRoleID(roleID, rolePermissions)
 	return rolePermissions, nil
 }
 
@@ -125,12 +131,14 @@ func (r *rolePermissionRepository) UpdateRolePermission(ctx context.Context, id 
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByRoleID(rolePermission.RoleID)
 	return nil
 }
 
 func (r *rolePermissionRepository) DeleteRolePermission(ctx context.Context, id uint) *helpers.ResponseError {
 	db := r.getDB(ctx)
-	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.RolePermission{}).Error; err != nil {
+	var rolePermission models.RolePermission
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&rolePermission).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -154,6 +162,7 @@ func (r *rolePermissionRepository) DeleteRolePermission(ctx context.Context, id 
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByRoleID(rolePermission.RoleID)
 	return nil
 }
 
@@ -167,6 +176,7 @@ func (r *rolePermissionRepository) DeleteRolePermissionsByRoleID(ctx context.Con
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByRoleID(roleID)
 	return nil
 }
 

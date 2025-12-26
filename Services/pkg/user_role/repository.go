@@ -15,10 +15,11 @@ import (
 
 type userRoleRepository struct {
 	resources models.Resources
+	cache     *userRoleCache
 }
 
 func NewUserRoleRepository(resources models.Resources) domain.UserRoleRepository {
-	return &userRoleRepository{resources: resources}
+	return &userRoleRepository{resources: resources, cache: newUserRoleCache(resources.RedisStorage)}
 }
 
 func (r *userRoleRepository) Migrate() error {
@@ -35,6 +36,7 @@ func (r *userRoleRepository) CreateUserRole(ctx context.Context, userRole models
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByUserID(userRole.UserID)
 	return nil
 }
 
@@ -86,6 +88,9 @@ func (r *userRoleRepository) GetUserRoles(ctx context.Context, pagination models
 }
 
 func (r *userRoleRepository) GetUserRolesByUserID(ctx context.Context, userID uint) ([]models.UserRole, *helpers.ResponseError) {
+	if userRoles, found := r.cache.GetByUserID(userID); found {
+		return userRoles, nil
+	}
 	db := r.getDB(ctx)
 	var userRoles []models.UserRole
 	if err := db.WithContext(ctx).Where("user_id = ?", userID).Find(&userRoles).Error; err != nil {
@@ -96,6 +101,7 @@ func (r *userRoleRepository) GetUserRolesByUserID(ctx context.Context, userID ui
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetByUserID(userID, userRoles)
 	return userRoles, nil
 }
 
@@ -125,12 +131,14 @@ func (r *userRoleRepository) UpdateUserRole(ctx context.Context, id uint, userRo
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByUserID(userRole.UserID)
 	return nil
 }
 
 func (r *userRoleRepository) DeleteUserRole(ctx context.Context, id uint) *helpers.ResponseError {
 	db := r.getDB(ctx)
-	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.UserRole{}).Error; err != nil {
+	var userRole models.UserRole
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&userRole).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -154,6 +162,7 @@ func (r *userRoleRepository) DeleteUserRole(ctx context.Context, id uint) *helpe
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByUserID(userRole.UserID)
 	return nil
 }
 
@@ -167,6 +176,7 @@ func (r *userRoleRepository) DeleteUserRolesByUserID(ctx context.Context, userID
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateByUserID(userID)
 	return nil
 }
 

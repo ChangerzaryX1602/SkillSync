@@ -47,7 +47,6 @@ func (r *authRepository) SignToken(ctx context.Context, user models.User, host s
 }
 
 func (r *authRepository) SaveRefreshToken(ctx context.Context, userID uint, token string, ttl time.Duration) *helpers.ResponseError {
-
 	key := fmt.Sprintf("refresh:%d", userID)
 	if err := r.resources.RedisStorage.Set(key, []byte(token), ttl); err != nil {
 		return &helpers.ResponseError{
@@ -91,7 +90,6 @@ func (r *authRepository) GetRefreshToken(ctx context.Context, userID uint) (stri
 }
 
 func (r *authRepository) DeleteRefreshToken(ctx context.Context, userID uint) *helpers.ResponseError {
-
 	key := fmt.Sprintf("refresh:%d", userID)
 	if err := r.resources.RedisStorage.Delete(key); err != nil {
 		return &helpers.ResponseError{

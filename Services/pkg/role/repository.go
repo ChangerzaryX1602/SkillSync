@@ -15,10 +15,11 @@ import (
 
 type roleRepository struct {
 	resources models.Resources
+	cache     *roleCache
 }
 
 func NewRoleRepository(resources models.Resources) domain.RoleRepository {
-	return &roleRepository{resources: resources}
+	return &roleRepository{resources: resources, cache: newRoleCache(resources.RedisStorage)}
 }
 
 func (r *roleRepository) Migrate() error {
@@ -39,6 +40,9 @@ func (r *roleRepository) CreateRole(ctx context.Context, role models.Role) *help
 }
 
 func (r *roleRepository) GetRole(ctx context.Context, id uint) (*models.Role, *helpers.ResponseError) {
+	if role, found := r.cache.Get(id); found {
+		return role, nil
+	}
 	db := r.getDB(ctx)
 	var role models.Role
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&role).Error; err != nil {
@@ -57,10 +61,14 @@ func (r *roleRepository) GetRole(ctx context.Context, id uint) (*models.Role, *h
 			Message: err.Error(),
 		}
 	}
+	r.cache.Set(&role)
 	return &role, nil
 }
 
 func (r *roleRepository) GetRoles(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, *helpers.ResponseError) {
+	if roles, found := r.cache.GetList(pagination, search); found {
+		return roles, &pagination, &search, nil
+	}
 	db := r.getDB(ctx)
 	var roles []models.Role
 	db = db.WithContext(ctx).Model(&models.Role{})
@@ -82,10 +90,14 @@ func (r *roleRepository) GetRoles(ctx context.Context, pagination models.Paginat
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetList(pagination, search, roles)
 	return roles, &pagination, &search, nil
 }
 
 func (r *roleRepository) GetRoleByName(ctx context.Context, name string) (*models.Role, *helpers.ResponseError) {
+	if role, found := r.cache.GetByName(name); found {
+		return role, nil
+	}
 	db := r.getDB(ctx)
 	var role models.Role
 	if err := db.WithContext(ctx).Where("name = ?", name).First(&role).Error; err != nil {
@@ -104,6 +116,7 @@ func (r *roleRepository) GetRoleByName(ctx context.Context, name string) (*model
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetByName(name, &role)
 	return &role, nil
 }
 
@@ -133,12 +146,14 @@ func (r *roleRepository) UpdateRole(ctx context.Context, id uint, role models.Ro
 			Message: err.Error(),
 		}
 	}
+	r.cache.Invalidate(id, role.Name)
 	return nil
 }
 
 func (r *roleRepository) DeleteRole(ctx context.Context, id uint) *helpers.ResponseError {
 	db := r.getDB(ctx)
-	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.Role{}).Error; err != nil {
+	var role models.Role
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&role).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -162,6 +177,7 @@ func (r *roleRepository) DeleteRole(ctx context.Context, id uint) *helpers.Respo
 			Message: err.Error(),
 		}
 	}
+	r.cache.Invalidate(id, role.Name)
 	return nil
 }
 

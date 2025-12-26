@@ -15,10 +15,11 @@ import (
 
 type permissionRepository struct {
 	resources models.Resources
+	cache     *permissionCache
 }
 
 func NewPermissionRepository(resources models.Resources) domain.PermissionRepository {
-	return &permissionRepository{resources: resources}
+	return &permissionRepository{resources: resources, cache: newPermissionCache(resources.RedisStorage)}
 }
 
 func (r *permissionRepository) Migrate() error {
@@ -39,6 +40,9 @@ func (r *permissionRepository) CreatePermission(ctx context.Context, permission 
 }
 
 func (r *permissionRepository) GetPermission(ctx context.Context, id uint) (*models.Permission, *helpers.ResponseError) {
+	if permission, found := r.cache.Get(id); found {
+		return permission, nil
+	}
 	db := r.getDB(ctx)
 	var permission models.Permission
 	if err := db.WithContext(ctx).Where("id = ?", id).First(&permission).Error; err != nil {
@@ -57,10 +61,14 @@ func (r *permissionRepository) GetPermission(ctx context.Context, id uint) (*mod
 			Message: err.Error(),
 		}
 	}
+	r.cache.Set(&permission)
 	return &permission, nil
 }
 
 func (r *permissionRepository) GetPermissions(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.Permission, *models.Pagination, *models.Search, *helpers.ResponseError) {
+	if permissions, found := r.cache.GetList(pagination, search); found {
+		return permissions, &pagination, &search, nil
+	}
 	db := r.getDB(ctx)
 	var permissions []models.Permission
 	db = db.WithContext(ctx).Model(&models.Permission{})
@@ -82,6 +90,7 @@ func (r *permissionRepository) GetPermissions(ctx context.Context, pagination mo
 			Message: err.Error(),
 		}
 	}
+	r.cache.SetList(pagination, search, permissions)
 	return permissions, &pagination, &search, nil
 }
 
@@ -111,6 +120,7 @@ func (r *permissionRepository) UpdatePermission(ctx context.Context, id uint, pe
 			Message: err.Error(),
 		}
 	}
+	r.cache.Invalidate(id)
 	return nil
 }
 
@@ -140,6 +150,7 @@ func (r *permissionRepository) DeletePermission(ctx context.Context, id uint) *h
 			Message: err.Error(),
 		}
 	}
+	r.cache.Invalidate(id)
 	return nil
 }
 
