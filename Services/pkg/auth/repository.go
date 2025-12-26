@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,7 +20,7 @@ type authRepository struct {
 func NewAuthRepository(resources models.Resources) domain.AuthRepository {
 	return &authRepository{resources: resources}
 }
-func (r *authRepository) SignToken(user models.User, host string, ttl time.Duration) (string, *helpers.ResponseError) {
+func (r *authRepository) SignToken(ctx context.Context, user models.User, host string, ttl time.Duration) (string, *helpers.ResponseError) {
 	token := jwt.NewWithClaims(r.resources.JwtResources.JwtSigningMethod, &jwt.RegisteredClaims{})
 	claims := token.Claims.(*jwt.RegisteredClaims)
 	claims.Subject = fmt.Sprintf("%d", user.ID)
@@ -37,7 +38,7 @@ func (r *authRepository) SignToken(user models.User, host string, ttl time.Durat
 	return signToken, nil
 }
 
-func (r *authRepository) SaveRefreshToken(userID uint, token string, ttl time.Duration) *helpers.ResponseError {
+func (r *authRepository) SaveRefreshToken(ctx context.Context, userID uint, token string, ttl time.Duration) *helpers.ResponseError {
 	key := fmt.Sprintf("refresh:%d", userID)
 	if err := r.resources.RedisStorage.Set(key, []byte(token), ttl); err != nil {
 		return &helpers.ResponseError{
@@ -50,7 +51,7 @@ func (r *authRepository) SaveRefreshToken(userID uint, token string, ttl time.Du
 	return nil
 }
 
-func (r *authRepository) GetRefreshToken(userID uint) (string, *helpers.ResponseError) {
+func (r *authRepository) GetRefreshToken(ctx context.Context, userID uint) (string, *helpers.ResponseError) {
 	key := fmt.Sprintf("refresh:%d", userID)
 	tokenBytes, err := r.resources.RedisStorage.Get(key)
 	if err != nil {
@@ -72,7 +73,7 @@ func (r *authRepository) GetRefreshToken(userID uint) (string, *helpers.Response
 	return string(tokenBytes), nil
 }
 
-func (r *authRepository) DeleteRefreshToken(userID uint) *helpers.ResponseError {
+func (r *authRepository) DeleteRefreshToken(ctx context.Context, userID uint) *helpers.ResponseError {
 	key := fmt.Sprintf("refresh:%d", userID)
 	if err := r.resources.RedisStorage.Delete(key); err != nil {
 		return &helpers.ResponseError{
@@ -85,7 +86,7 @@ func (r *authRepository) DeleteRefreshToken(userID uint) *helpers.ResponseError 
 	return nil
 }
 
-func (r *authRepository) ParseToken(tokenString string) (*jwt.Token, *helpers.ResponseError) {
+func (r *authRepository) ParseToken(ctx context.Context, tokenString string) (*jwt.Token, *helpers.ResponseError) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, r.resources.JwtResources.JwtKeyfunc)
 	if err != nil {
 		return nil, &helpers.ResponseError{

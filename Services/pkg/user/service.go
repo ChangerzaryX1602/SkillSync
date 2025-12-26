@@ -1,6 +1,8 @@
 package user
 
 import (
+	"context"
+
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 
@@ -14,43 +16,43 @@ type userService struct {
 func NewUserService(repository domain.UserRepository) domain.UserService {
 	return &userService{repository: repository}
 }
-func (s *userService) CreateUser(user models.User) []helpers.ResponseError {
-	err := s.repository.CreateUser(user)
+func (s *userService) CreateUser(ctx context.Context, user models.User) []helpers.ResponseError {
+	err := s.repository.CreateUser(ctx, user)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}
 	return nil
 }
-func (s *userService) GetUser(id uint) (*models.User, []helpers.ResponseError) {
-	user, err := s.repository.GetUser(id)
+func (s *userService) GetUser(ctx context.Context, id uint) (*models.User, []helpers.ResponseError) {
+	user, err := s.repository.GetUser(ctx, id)
 	if err != nil {
 		return nil, []helpers.ResponseError{*err}
 	}
 	return user, nil
 }
-func (s *userService) GetUsers(pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, []helpers.ResponseError) {
-	users, paginated, searched, err := s.repository.GetUsers(pagination, search)
+func (s *userService) GetUsers(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, []helpers.ResponseError) {
+	users, paginated, searched, err := s.repository.GetUsers(ctx, pagination, search)
 	if err != nil {
 		return nil, nil, nil, []helpers.ResponseError{*err}
 	}
 	return users, paginated, searched, nil
 }
-func (s *userService) UpdateUser(id uint, user models.User) []helpers.ResponseError {
-	err := s.repository.UpdateUser(id, user)
+func (s *userService) UpdateUser(ctx context.Context, id uint, user models.User) []helpers.ResponseError {
+	err := s.repository.UpdateUser(ctx, id, user)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}
 	return nil
 }
-func (s *userService) DeleteUser(id uint) []helpers.ResponseError {
-	err := s.repository.DeleteUser(id)
+func (s *userService) DeleteUser(ctx context.Context, id uint) []helpers.ResponseError {
+	err := s.repository.DeleteUser(ctx, id)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}
 	return nil
 }
-func (s *userService) GetUserByEmail(email string) (*models.User, []helpers.ResponseError) {
-	user, err := s.repository.GetUserByEmail(email)
+func (s *userService) GetUserByEmail(ctx context.Context, email string) (*models.User, []helpers.ResponseError) {
+	user, err := s.repository.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, []helpers.ResponseError{*err}
 	}

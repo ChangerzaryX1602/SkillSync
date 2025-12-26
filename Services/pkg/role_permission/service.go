@@ -1,6 +1,8 @@
 package role_permission
 
 import (
+	"context"
+
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 
@@ -15,56 +17,56 @@ func NewRolePermissionService(repository domain.RolePermissionRepository) domain
 	return &rolePermissionService{repository: repository}
 }
 
-func (s *rolePermissionService) CreateRolePermission(rolePermission models.RolePermission) []helpers.ResponseError {
-	err := s.repository.CreateRolePermission(rolePermission)
+func (s *rolePermissionService) CreateRolePermission(ctx context.Context, rolePermission models.RolePermission) []helpers.ResponseError {
+	err := s.repository.CreateRolePermission(ctx, rolePermission)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}
 	return nil
 }
 
-func (s *rolePermissionService) GetRolePermission(id uint) (*models.RolePermission, []helpers.ResponseError) {
-	rolePermission, err := s.repository.GetRolePermission(id)
+func (s *rolePermissionService) GetRolePermission(ctx context.Context, id uint) (*models.RolePermission, []helpers.ResponseError) {
+	rolePermission, err := s.repository.GetRolePermission(ctx, id)
 	if err != nil {
 		return nil, []helpers.ResponseError{*err}
 	}
 	return rolePermission, nil
 }
 
-func (s *rolePermissionService) GetRolePermissions(pagination models.Pagination, search models.Search) ([]models.RolePermission, *models.Pagination, *models.Search, []helpers.ResponseError) {
-	rolePermissions, paginated, searched, err := s.repository.GetRolePermissions(pagination, search)
+func (s *rolePermissionService) GetRolePermissions(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.RolePermission, *models.Pagination, *models.Search, []helpers.ResponseError) {
+	rolePermissions, paginated, searched, err := s.repository.GetRolePermissions(ctx, pagination, search)
 	if err != nil {
 		return nil, nil, nil, []helpers.ResponseError{*err}
 	}
 	return rolePermissions, paginated, searched, nil
 }
 
-func (s *rolePermissionService) GetRolePermissionsByRoleID(roleID uint) ([]models.RolePermission, []helpers.ResponseError) {
-	rolePermissions, err := s.repository.GetRolePermissionsByRoleID(roleID)
+func (s *rolePermissionService) GetRolePermissionsByRoleID(ctx context.Context, roleID uint) ([]models.RolePermission, []helpers.ResponseError) {
+	rolePermissions, err := s.repository.GetRolePermissionsByRoleID(ctx, roleID)
 	if err != nil {
 		return nil, []helpers.ResponseError{*err}
 	}
 	return rolePermissions, nil
 }
 
-func (s *rolePermissionService) UpdateRolePermission(id uint, rolePermission models.RolePermission) []helpers.ResponseError {
-	err := s.repository.UpdateRolePermission(id, rolePermission)
+func (s *rolePermissionService) UpdateRolePermission(ctx context.Context, id uint, rolePermission models.RolePermission) []helpers.ResponseError {
+	err := s.repository.UpdateRolePermission(ctx, id, rolePermission)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}
 	return nil
 }
 
-func (s *rolePermissionService) DeleteRolePermission(id uint) []helpers.ResponseError {
-	err := s.repository.DeleteRolePermission(id)
+func (s *rolePermissionService) DeleteRolePermission(ctx context.Context, id uint) []helpers.ResponseError {
+	err := s.repository.DeleteRolePermission(ctx, id)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}
 	return nil
 }
 
-func (s *rolePermissionService) DeleteRolePermissionsByRoleID(roleID uint) []helpers.ResponseError {
-	err := s.repository.DeleteRolePermissionsByRoleID(roleID)
+func (s *rolePermissionService) DeleteRolePermissionsByRoleID(ctx context.Context, roleID uint) []helpers.ResponseError {
+	err := s.repository.DeleteRolePermissionsByRoleID(ctx, roleID)
 	if err != nil {
 		return []helpers.ResponseError{*err}
 	}

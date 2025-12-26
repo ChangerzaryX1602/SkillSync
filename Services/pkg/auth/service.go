@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -20,7 +21,7 @@ type authService struct {
 func NewAuthService(repository domain.AuthRepository, service domain.UserService) domain.AuthService {
 	return &authService{repository: repository, service: service}
 }
-func (s *authService) Login(user models.User, host string) (*string, *string, []helpers.ResponseError) {
+func (s *authService) Login(ctx context.Context, user models.User, host string) (*string, *string, []helpers.ResponseError) {
 	if !utils.IsValidEmail(user.Email) {
 		return nil, nil, []helpers.ResponseError{
 			{
@@ -31,7 +32,7 @@ func (s *authService) Login(user models.User, host string) (*string, *string, []
 			},
 		}
 	}
-	userE, errorFormList := s.service.GetUserByEmail(user.Email)
+	userE, errorFormList := s.service.GetUserByEmail(ctx, user.Email)
 	if errorFormList != nil {
 		return nil, nil, errorFormList
 	}
@@ -46,25 +47,25 @@ func (s *authService) Login(user models.User, host string) (*string, *string, []
 			},
 		}
 	}
-	token, errorForm := s.repository.SignToken(*userE, host, time.Minute*15)
+	token, errorForm := s.repository.SignToken(ctx, *userE, host, time.Minute*15)
 	if errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
 
-	refreshToken, errorForm := s.repository.SignToken(*userE, host, time.Hour*24*7)
+	refreshToken, errorForm := s.repository.SignToken(ctx, *userE, host, time.Hour*24*7)
 	if errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
 
-	if errorForm := s.repository.SaveRefreshToken(userE.ID, refreshToken, time.Hour*24*7); errorForm != nil {
+	if errorForm := s.repository.SaveRefreshToken(ctx, userE.ID, refreshToken, time.Hour*24*7); errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
 
 	return &token, &refreshToken, nil
 }
 
-func (s *authService) RefreshToken(refreshToken string) (*string, *string, []helpers.ResponseError) {
-	token, errorForm := s.repository.ParseToken(refreshToken)
+func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*string, *string, []helpers.ResponseError) {
+	token, errorForm := s.repository.ParseToken(ctx, refreshToken)
 	if errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
@@ -104,7 +105,7 @@ func (s *authService) RefreshToken(refreshToken string) (*string, *string, []hel
 		}
 	}
 
-	storedToken, errorForm := s.repository.GetRefreshToken(uint(userId))
+	storedToken, errorForm := s.repository.GetRefreshToken(ctx, uint(userId))
 	if errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
@@ -120,28 +121,28 @@ func (s *authService) RefreshToken(refreshToken string) (*string, *string, []hel
 		}
 	}
 
-	user, errorFormList := s.service.GetUser(uint(userId))
+	user, errorFormList := s.service.GetUser(ctx, uint(userId))
 	if errorFormList != nil {
 		return nil, nil, errorFormList
 	}
 
-	newAccessToken, errorForm := s.repository.SignToken(*user, claims.Issuer, time.Minute*15)
+	newAccessToken, errorForm := s.repository.SignToken(ctx, *user, claims.Issuer, time.Minute*15)
 	if errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
 
-	newRefreshToken, errorForm := s.repository.SignToken(*user, claims.Issuer, time.Hour*24*7)
+	newRefreshToken, errorForm := s.repository.SignToken(ctx, *user, claims.Issuer, time.Hour*24*7)
 	if errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
 
-	if errorForm := s.repository.SaveRefreshToken(user.ID, newRefreshToken, time.Hour*24*7); errorForm != nil {
+	if errorForm := s.repository.SaveRefreshToken(ctx, user.ID, newRefreshToken, time.Hour*24*7); errorForm != nil {
 		return nil, nil, []helpers.ResponseError{*errorForm}
 	}
 
 	return &newAccessToken, &newRefreshToken, nil
 }
-func (s *authService) Register(user models.User) []helpers.ResponseError {
+func (s *authService) Register(ctx context.Context, user models.User) []helpers.ResponseError {
 	if !utils.IsValidEmail(user.Email) {
 		return []helpers.ResponseError{
 			{
@@ -152,15 +153,15 @@ func (s *authService) Register(user models.User) []helpers.ResponseError {
 			},
 		}
 	}
-	err := s.service.CreateUser(user)
+	err := s.service.CreateUser(ctx, user)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *authService) GetUserByID(userId uint) (*models.User, []helpers.ResponseError) {
-	user, err := s.service.GetUser(userId)
+func (s *authService) GetUserByID(ctx context.Context, userId uint) (*models.User, []helpers.ResponseError) {
+	user, err := s.service.GetUser(ctx, userId)
 	if err != nil {
 		return nil, err
 	}

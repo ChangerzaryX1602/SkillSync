@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"context"
+
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 
 	helpers "github.com/zercle/gofiber-helpers"
@@ -8,17 +10,17 @@ import (
 
 type RoleRepository interface {
 	Migrate() error
-	CreateRole(role models.Role) *helpers.ResponseError
-	GetRole(id uint) (*models.Role, *helpers.ResponseError)
-	GetRoles(pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, *helpers.ResponseError)
-	UpdateRole(id uint, role models.Role) *helpers.ResponseError
-	DeleteRole(id uint) *helpers.ResponseError
+	CreateRole(ctx context.Context, role models.Role) *helpers.ResponseError
+	GetRole(ctx context.Context, id uint) (*models.Role, *helpers.ResponseError)
+	GetRoles(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, *helpers.ResponseError)
+	UpdateRole(ctx context.Context, id uint, role models.Role) *helpers.ResponseError
+	DeleteRole(ctx context.Context, id uint) *helpers.ResponseError
 }
 
 type RoleService interface {
-	CreateRole(role models.Role) []helpers.ResponseError
-	GetRole(id uint) (*models.Role, []helpers.ResponseError)
-	GetRoles(pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, []helpers.ResponseError)
-	UpdateRole(id uint, role models.Role) []helpers.ResponseError
-	DeleteRole(id uint) []helpers.ResponseError
+	CreateRole(ctx context.Context, role models.Role) []helpers.ResponseError
+	GetRole(ctx context.Context, id uint) (*models.Role, []helpers.ResponseError)
+	GetRoles(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, []helpers.ResponseError)
+	UpdateRole(ctx context.Context, id uint, role models.Role) []helpers.ResponseError
+	DeleteRole(ctx context.Context, id uint) []helpers.ResponseError
 }

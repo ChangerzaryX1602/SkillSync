@@ -1,6 +1,8 @@
 package role
 
 import (
+	"context"
+
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
@@ -22,8 +24,8 @@ func (r *roleRepository) Migrate() error {
 	return r.resources.MainDbConn.AutoMigrate(&models.Role{})
 }
 
-func (r *roleRepository) CreateRole(role models.Role) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Create(&role).Error; err != nil {
+func (r *roleRepository) CreateRole(ctx context.Context, role models.Role) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Create(&role).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -34,9 +36,9 @@ func (r *roleRepository) CreateRole(role models.Role) *helpers.ResponseError {
 	return nil
 }
 
-func (r *roleRepository) GetRole(id uint) (*models.Role, *helpers.ResponseError) {
+func (r *roleRepository) GetRole(ctx context.Context, id uint) (*models.Role, *helpers.ResponseError) {
 	var role models.Role
-	if err := r.resources.MainDbConn.Where("id = ?", id).First(&role).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&role).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -55,10 +57,10 @@ func (r *roleRepository) GetRole(id uint) (*models.Role, *helpers.ResponseError)
 	return &role, nil
 }
 
-func (r *roleRepository) GetRoles(pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, *helpers.ResponseError) {
+func (r *roleRepository) GetRoles(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.Role, *models.Pagination, *models.Search, *helpers.ResponseError) {
 	var roles []models.Role
-	db := r.resources.MainDbConn.Model(&models.Role{})
-	db = utils.ApplySearch(db, search, false)
+	db := r.resources.MainDbConn.WithContext(ctx).Model(&models.Role{})
+	db = utils.ApplySearch(ctx, r.resources.FastHTTPClient, db, search, false)
 	db = utils.ApplyPagination(db, &pagination, models.Role{})
 	if err := db.Find(&roles).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -79,8 +81,8 @@ func (r *roleRepository) GetRoles(pagination models.Pagination, search models.Se
 	return roles, &pagination, &search, nil
 }
 
-func (r *roleRepository) UpdateRole(id uint, role models.Role) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Where("id = ?", id).First(&models.Role{}).Error; err != nil {
+func (r *roleRepository) UpdateRole(ctx context.Context, id uint, role models.Role) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.Role{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -96,7 +98,7 @@ func (r *roleRepository) UpdateRole(id uint, role models.Role) *helpers.Response
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.Model(&models.Role{}).Where("id = ?", id).Updates(role).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Model(&models.Role{}).Where("id = ?", id).Updates(role).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -107,8 +109,8 @@ func (r *roleRepository) UpdateRole(id uint, role models.Role) *helpers.Response
 	return nil
 }
 
-func (r *roleRepository) DeleteRole(id uint) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Where("id = ?", id).First(&models.Role{}).Error; err != nil {
+func (r *roleRepository) DeleteRole(ctx context.Context, id uint) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.Role{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -124,7 +126,7 @@ func (r *roleRepository) DeleteRole(id uint) *helpers.ResponseError {
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.Delete(&models.Role{}, id).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Delete(&models.Role{}, id).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),

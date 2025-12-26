@@ -1,6 +1,8 @@
 package user_role
 
 import (
+	"context"
+
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
@@ -22,8 +24,8 @@ func (r *userRoleRepository) Migrate() error {
 	return r.resources.MainDbConn.AutoMigrate(&models.UserRole{})
 }
 
-func (r *userRoleRepository) CreateUserRole(userRole models.UserRole) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Create(&userRole).Error; err != nil {
+func (r *userRoleRepository) CreateUserRole(ctx context.Context, userRole models.UserRole) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Create(&userRole).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -34,9 +36,9 @@ func (r *userRoleRepository) CreateUserRole(userRole models.UserRole) *helpers.R
 	return nil
 }
 
-func (r *userRoleRepository) GetUserRole(id uint) (*models.UserRole, *helpers.ResponseError) {
+func (r *userRoleRepository) GetUserRole(ctx context.Context, id uint) (*models.UserRole, *helpers.ResponseError) {
 	var userRole models.UserRole
-	if err := r.resources.MainDbConn.Where("id = ?", id).First(&userRole).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&userRole).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -55,10 +57,10 @@ func (r *userRoleRepository) GetUserRole(id uint) (*models.UserRole, *helpers.Re
 	return &userRole, nil
 }
 
-func (r *userRoleRepository) GetUserRoles(pagination models.Pagination, search models.Search) ([]models.UserRole, *models.Pagination, *models.Search, *helpers.ResponseError) {
+func (r *userRoleRepository) GetUserRoles(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.UserRole, *models.Pagination, *models.Search, *helpers.ResponseError) {
 	var userRoles []models.UserRole
-	db := r.resources.MainDbConn.Model(&models.UserRole{})
-	db = utils.ApplySearch(db, search, false)
+	db := r.resources.MainDbConn.WithContext(ctx).Model(&models.UserRole{})
+	db = utils.ApplySearch(ctx, r.resources.FastHTTPClient, db, search, false)
 	db = utils.ApplyPagination(db, &pagination, models.UserRole{})
 	if err := db.Find(&userRoles).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -79,9 +81,9 @@ func (r *userRoleRepository) GetUserRoles(pagination models.Pagination, search m
 	return userRoles, &pagination, &search, nil
 }
 
-func (r *userRoleRepository) GetUserRolesByUserID(userID uint) ([]models.UserRole, *helpers.ResponseError) {
+func (r *userRoleRepository) GetUserRolesByUserID(ctx context.Context, userID uint) ([]models.UserRole, *helpers.ResponseError) {
 	var userRoles []models.UserRole
-	if err := r.resources.MainDbConn.Where("user_id = ?", userID).Find(&userRoles).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("user_id = ?", userID).Find(&userRoles).Error; err != nil {
 		return nil, &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -92,8 +94,8 @@ func (r *userRoleRepository) GetUserRolesByUserID(userID uint) ([]models.UserRol
 	return userRoles, nil
 }
 
-func (r *userRoleRepository) UpdateUserRole(id uint, userRole models.UserRole) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Where("id = ?", id).First(&models.UserRole{}).Error; err != nil {
+func (r *userRoleRepository) UpdateUserRole(ctx context.Context, id uint, userRole models.UserRole) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.UserRole{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -109,7 +111,7 @@ func (r *userRoleRepository) UpdateUserRole(id uint, userRole models.UserRole) *
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.Model(&models.UserRole{}).Where("id = ?", id).Updates(userRole).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Model(&models.UserRole{}).Where("id = ?", id).Updates(userRole).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -120,8 +122,8 @@ func (r *userRoleRepository) UpdateUserRole(id uint, userRole models.UserRole) *
 	return nil
 }
 
-func (r *userRoleRepository) DeleteUserRole(id uint) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Where("id = ?", id).First(&models.UserRole{}).Error; err != nil {
+func (r *userRoleRepository) DeleteUserRole(ctx context.Context, id uint) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.UserRole{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -137,7 +139,7 @@ func (r *userRoleRepository) DeleteUserRole(id uint) *helpers.ResponseError {
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.Delete(&models.UserRole{}, id).Error; err != nil {
+	if err := r.resources.MainDbConn.WithContext(ctx).Delete(&models.UserRole{}, id).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -148,8 +150,8 @@ func (r *userRoleRepository) DeleteUserRole(id uint) *helpers.ResponseError {
 	return nil
 }
 
-func (r *userRoleRepository) DeleteUserRolesByUserID(userID uint) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
+func (r *userRoleRepository) DeleteUserRolesByUserID(ctx context.Context, userID uint) *helpers.ResponseError {
+	if err := r.resources.MainDbConn.WithContext(ctx).Where("user_id = ?", userID).Delete(&models.UserRole{}).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),

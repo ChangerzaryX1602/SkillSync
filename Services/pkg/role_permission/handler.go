@@ -49,7 +49,7 @@ func (h *rolePermissionHandler) CreateRolePermission() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.CreateRolePermission(rolePermission); errorForm != nil {
+		if errorForm := h.service.CreateRolePermission(c.UserContext(), rolePermission); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -87,7 +87,7 @@ func (h *rolePermissionHandler) GetRolePermission() fiber.Handler {
 				},
 			})
 		}
-		rolePermission, errorForm := h.service.GetRolePermission(uint(id))
+		rolePermission, errorForm := h.service.GetRolePermission(c.UserContext(), uint(id))
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -145,7 +145,7 @@ func (h *rolePermissionHandler) GetRolePermissions() fiber.Handler {
 				},
 			})
 		}
-		rolePermissions, paginated, searched, errorForm := h.service.GetRolePermissions(pagination, search)
+		rolePermissions, paginated, searched, errorForm := h.service.GetRolePermissions(c.UserContext(), pagination, search)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -188,7 +188,7 @@ func (h *rolePermissionHandler) GetRolePermissionsByRoleID() fiber.Handler {
 				},
 			})
 		}
-		rolePermissions, errorForm := h.service.GetRolePermissionsByRoleID(uint(roleId))
+		rolePermissions, errorForm := h.service.GetRolePermissionsByRoleID(c.UserContext(), uint(roleId))
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -242,7 +242,7 @@ func (h *rolePermissionHandler) UpdateRolePermission() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.UpdateRolePermission(uint(id), rolePermission); errorForm != nil {
+		if errorForm := h.service.UpdateRolePermission(c.UserContext(), uint(id), rolePermission); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -280,7 +280,7 @@ func (h *rolePermissionHandler) DeleteRolePermission() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.DeleteRolePermission(uint(id)); errorForm != nil {
+		if errorForm := h.service.DeleteRolePermission(c.UserContext(), uint(id)); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -317,7 +317,7 @@ func (h *rolePermissionHandler) DeleteRolePermissionsByRoleID() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.DeleteRolePermissionsByRoleID(uint(roleId)); errorForm != nil {
+		if errorForm := h.service.DeleteRolePermissionsByRoleID(c.UserContext(), uint(roleId)); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,

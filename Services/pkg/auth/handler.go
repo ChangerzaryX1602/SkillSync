@@ -46,7 +46,7 @@ func (h *authHandler) Login() fiber.Handler {
 			})
 		}
 		host := c.Hostname()
-		token, refreshToken, errorForm := h.service.Login(user, host)
+		token, refreshToken, errorForm := h.service.Login(c.UserContext(), user, host)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -101,7 +101,7 @@ func (h *authHandler) RefreshToken() fiber.Handler {
 			})
 		}
 
-		token, refreshToken, errorForm := h.service.RefreshToken(refreshTokenGiven)
+		token, refreshToken, errorForm := h.service.RefreshToken(c.UserContext(), refreshTokenGiven)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -140,7 +140,7 @@ func (h *authHandler) Register() fiber.Handler {
 				},
 			})
 		}
-		errorForm := h.service.Register(user)
+		errorForm := h.service.Register(c.UserContext(), user)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,

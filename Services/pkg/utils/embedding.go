@@ -1,15 +1,13 @@
 package utils
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 
 	"github.com/spf13/viper"
+	"github.com/valyala/fasthttp"
 	"google.golang.org/genai"
 )
 
@@ -39,32 +37,42 @@ func GenerateEmbedding(text string, embeddingKey string) ([]float32, error) {
 
 	return result.Embeddings[0].Values, nil
 }
-func GenerateEmbeddingByOllama(text string) ([]float32, error) {
-	requestBody, err := json.Marshal(map[string]interface{}{
+func GenerateEmbeddingByOllama(ctx context.Context, FastHttpClient *fasthttp.Client, text string) ([]float32, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+
+	req.SetRequestURI(viper.GetString("app.ollama_url") + "/api/embeddings")
+	req.Header.SetMethod(fasthttp.MethodPost)
+	req.Header.SetContentType("application/json")
+
+	requestBody := map[string]interface{}{
 		"model":  "bge-m3",
 		"prompt": text,
-	})
+	}
+	bodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
+		return nil, err
+	}
+	req.SetBody(bodyBytes)
+
+	if err := FastHttpClient.Do(req, resp); err != nil {
 		return nil, err
 	}
 
-	resp, err := http.Post(viper.GetString("app.ollama_url")+"/api/embeddings", "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to generate embedding: %s", resp.Status)
+	if resp.StatusCode() != fasthttp.StatusOK {
+		return nil, fmt.Errorf("failed to generate embedding: %d", resp.StatusCode())
 	}
 
 	var response struct {
 		Embedding []float32 `json:"embedding"`
 	}
-	if err := json.Unmarshal(body, &response); err != nil {
+	if err := json.Unmarshal(resp.Body(), &response); err != nil {
 		return nil, err
 	}
 

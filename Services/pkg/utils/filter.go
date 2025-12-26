@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
+	"github.com/valyala/fasthttp"
 
 	"gorm.io/gorm"
 )
@@ -16,7 +18,7 @@ func vectorToString(vec []float32) string {
 	}
 	return "[" + strings.Join(strValues, ",") + "]"
 }
-func ApplySearch(db *gorm.DB, filter models.Search, IsUseEmbedding bool, embbedKey ...string) *gorm.DB {
+func ApplySearch(ctx context.Context, client *fasthttp.Client, db *gorm.DB, filter models.Search, IsUseEmbedding bool, embbedKey ...string) *gorm.DB {
 	if filter.Keyword == "" {
 		return db
 	}
@@ -40,7 +42,7 @@ func ApplySearch(db *gorm.DB, filter models.Search, IsUseEmbedding bool, embbedK
 			return db.Where(fmt.Sprintf("%s ILIKE ?", filter.Column), "%"+filter.Keyword+"%")
 		}
 	} else {
-		vec, err := GenerateEmbeddingByOllama(filter.Keyword)
+		vec, err := GenerateEmbeddingByOllama(ctx, client, filter.Keyword)
 		if err == nil {
 			return db.Order(fmt.Sprintf("embedding <=> '%s'", vectorToString(vec)))
 		} else {

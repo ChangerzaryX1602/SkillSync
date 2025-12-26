@@ -55,7 +55,7 @@ func (s *Server) SetupRoutes(app *fiber.App) {
 			log.Panicf("Failed to migrate permission data: %v", err)
 		}
 	}
-	routerResources := handlers.NewRouterResources(s.JwtResources.JwtKeyfunc, s.MainDbConn)
+	routerResources := handlers.NewRouterResources(s.JwtResources.JwtKeyfunc, s.MainDbConn, s.RedisStorage)
 	// App Services
 	userService := user.NewUserService(userRepository)
 	authService := auth.NewAuthService(authRepository, userService)

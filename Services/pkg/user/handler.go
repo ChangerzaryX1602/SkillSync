@@ -50,7 +50,7 @@ func (h *userHandler) CreateUser() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.CreateUser(user); errorForm != nil {
+		if errorForm := h.service.CreateUser(c.UserContext(), user); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -88,7 +88,7 @@ func (h *userHandler) GetUser() fiber.Handler {
 				},
 			})
 		}
-		user, errorForm := h.service.GetUser(uint(id))
+		user, errorForm := h.service.GetUser(c.UserContext(), uint(id))
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -146,7 +146,7 @@ func (h *userHandler) GetUsers() fiber.Handler {
 				},
 			})
 		}
-		users, paginated, searched, errorForm := h.service.GetUsers(pagination, search)
+		users, paginated, searched, errorForm := h.service.GetUsers(c.UserContext(), pagination, search)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -204,7 +204,7 @@ func (h *userHandler) UpdateUser() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.UpdateUser(uint(id), user); errorForm != nil {
+		if errorForm := h.service.UpdateUser(c.UserContext(), uint(id), user); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -242,7 +242,7 @@ func (h *userHandler) DeleteUser() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.DeleteUser(uint(id)); errorForm != nil {
+		if errorForm := h.service.DeleteUser(c.UserContext(), uint(id)); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -280,7 +280,7 @@ func (h *userHandler) GetMe() fiber.Handler {
 				},
 			})
 		}
-		user, errorForm := h.service.GetUser(uint(userIdInt))
+		user, errorForm := h.service.GetUser(c.UserContext(), uint(userIdInt))
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,

@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/golang-jwt/jwt/v4"
@@ -50,6 +52,16 @@ func hasAllPerms(userPerms []string, required []string) bool {
 }
 
 func (r *RouterResources) ExtractPerms(userId string) ([]string, error) {
+	cacheKey := fmt.Sprintf("%s:%s", models.InternalHandlerMiddlewareAuthPermission, userId)
+	if r.RedisStorage != nil {
+		if cachedBytes, err := r.RedisStorage.Get(cacheKey); err == nil && len(cachedBytes) > 0 {
+			var cachedPerms []string
+			if err := json.Unmarshal(cachedBytes, &cachedPerms); err == nil {
+				return cachedPerms, nil
+			}
+		}
+	}
+
 	userIdInt, err := strconv.Atoi(userId)
 	if err != nil {
 		return nil, helpers.NewError(http.StatusBadRequest, helpers.WhereAmI(), "user ID malformed")
@@ -58,6 +70,15 @@ func (r *RouterResources) ExtractPerms(userId string) ([]string, error) {
 	if respErr != nil {
 		return nil, fmt.Errorf("failed to get user permissions: %s", respErr.Message)
 	}
+
+	go func(c string, p []string) {
+		if r.RedisStorage != nil && len(p) > 0 {
+			if marshaledBytes, err := json.Marshal(p); err == nil {
+				_ = r.RedisStorage.Set(c, marshaledBytes, 5*time.Minute)
+			}
+		}
+	}(cacheKey, permissions)
+
 	return permissions, nil
 }
 func (r *RouterResources) GetUserPermissions(userId uint) ([]string, *helpers.ResponseError) {

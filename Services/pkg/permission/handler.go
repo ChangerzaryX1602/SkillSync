@@ -49,7 +49,7 @@ func (h *permissionHandler) CreatePermission() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.CreatePermission(permission); errorForm != nil {
+		if errorForm := h.service.CreatePermission(c.UserContext(), permission); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -87,7 +87,7 @@ func (h *permissionHandler) GetPermission() fiber.Handler {
 				},
 			})
 		}
-		permission, errorForm := h.service.GetPermission(uint(id))
+		permission, errorForm := h.service.GetPermission(c.UserContext(), uint(id))
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -145,7 +145,7 @@ func (h *permissionHandler) GetPermissions() fiber.Handler {
 				},
 			})
 		}
-		permissions, paginated, searched, errorForm := h.service.GetPermissions(pagination, search)
+		permissions, paginated, searched, errorForm := h.service.GetPermissions(c.UserContext(), pagination, search)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -203,7 +203,7 @@ func (h *permissionHandler) UpdatePermission() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.UpdatePermission(uint(id), permission); errorForm != nil {
+		if errorForm := h.service.UpdatePermission(c.UserContext(), uint(id), permission); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -241,7 +241,7 @@ func (h *permissionHandler) DeletePermission() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.DeletePermission(uint(id)); errorForm != nil {
+		if errorForm := h.service.DeletePermission(c.UserContext(), uint(id)); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,

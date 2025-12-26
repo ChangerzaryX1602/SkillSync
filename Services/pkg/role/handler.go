@@ -47,7 +47,7 @@ func (h *roleHandler) CreateRole() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.CreateRole(role); errorForm != nil {
+		if errorForm := h.service.CreateRole(c.UserContext(), role); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -85,7 +85,7 @@ func (h *roleHandler) GetRole() fiber.Handler {
 				},
 			})
 		}
-		role, errorForm := h.service.GetRole(uint(id))
+		role, errorForm := h.service.GetRole(c.UserContext(), uint(id))
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -143,7 +143,7 @@ func (h *roleHandler) GetRoles() fiber.Handler {
 				},
 			})
 		}
-		roles, paginated, searched, errorForm := h.service.GetRoles(pagination, search)
+		roles, paginated, searched, errorForm := h.service.GetRoles(c.UserContext(), pagination, search)
 		if errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
@@ -201,7 +201,7 @@ func (h *roleHandler) UpdateRole() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.UpdateRole(uint(id), role); errorForm != nil {
+		if errorForm := h.service.UpdateRole(c.UserContext(), uint(id), role); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
@@ -239,7 +239,7 @@ func (h *roleHandler) DeleteRole() fiber.Handler {
 				},
 			})
 		}
-		if errorForm := h.service.DeleteRole(uint(id)); errorForm != nil {
+		if errorForm := h.service.DeleteRole(c.UserContext(), uint(id)); errorForm != nil {
 			return c.Status(errorForm[0].Code).JSON(helpers.ResponseForm{
 				Success: false,
 				Errors:  errorForm,
