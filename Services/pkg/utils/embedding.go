@@ -66,7 +66,7 @@ func GenerateEmbeddingByOllama(ctx context.Context, FastHttpClient *fasthttp.Cli
 	}
 
 	if resp.StatusCode() != fasthttp.StatusOK {
-		return nil, fmt.Errorf("failed to generate embedding: %d", resp.StatusCode())
+		return nil, fmt.Errorf("failed to generate embedding: %d with the response %s", resp.StatusCode(), resp.Body())
 	}
 
 	var response struct {

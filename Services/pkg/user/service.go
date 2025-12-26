@@ -27,7 +27,7 @@ func NewUserService(repository domain.UserRepository, roleRepository domain.Role
 	}
 }
 func (s *userService) CreateUser(ctx context.Context, user models.User) []helpers.ResponseError {
-	if !utils.IsValidEmail(user.Email) {
+	if !utils.IsValidEmail(user.Email) || user.PasswordTemp == "" {
 		return []helpers.ResponseError{
 			{
 				Code:    400,

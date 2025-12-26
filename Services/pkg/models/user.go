@@ -13,11 +13,11 @@ type User struct {
 	Username     string          `json:"username" gorm:"unique;not null"`
 	Email        string          `json:"email" gorm:"unique;not null"`
 	Password     string          `json:"-" gorm:"not null" query:"-"`
-	PasswordTemp string          `json:"password" gorm:"-" query:"-"`
+	PasswordTemp string          `json:"password,omitempty" gorm:"-" query:"-"`
 	Embedding    pgvector.Vector `json:"-" gorm:"type:vector(1024)"`
 	CreatedAt    time.Time       `json:"created_at" gorm:"autoCreateTime" swaggerignore:"true"`
 	UpdatedAt    time.Time       `json:"updated_at" gorm:"autoUpdateTime" swaggerignore:"true"`
-	DeletedAt    gorm.DeletedAt  `json:"deleted_at,omitempty" gorm:"index" swaggerignore:"true"`
+	DeletedAt    gorm.DeletedAt  `json:"-" gorm:"index" swaggerignore:"true"`
 }
 
 func (u *User) GenerateSearchContext() string {
