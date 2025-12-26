@@ -1,6 +1,7 @@
 package datasources
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -123,4 +124,18 @@ func applyDbPoolConfig(dbConn *gorm.DB, config DbConfig) (err error) {
 	// SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	sqlDB.SetConnMaxLifetime(config.ConnMaxLifetime)
 	return
+}
+
+type contextKey string
+
+const txKey contextKey = "tx"
+
+func NewContextWithTx(ctx context.Context, tx *gorm.DB) context.Context {
+	return context.WithValue(ctx, txKey, tx)
+}
+func GetTxFromContext(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(txKey).(*gorm.DB); ok {
+		return tx
+	}
+	return nil
 }

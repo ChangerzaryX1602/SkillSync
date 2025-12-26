@@ -6,6 +6,7 @@ import (
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
+	txcontext "github.com/ChangerzaryX1602/SkillSync/pkg/tx_context"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -35,6 +36,7 @@ func (r *userRepository) Migrate() error {
 	return nil
 }
 func (r *userRepository) CreateUser(ctx context.Context, user models.User) *helpers.ResponseError {
+	db := r.getDB(ctx)
 	vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, user.GenerateSearchContext())
 	if err != nil {
 		fmt.Printf("Error generating embedding: %v\n", err)
@@ -42,60 +44,20 @@ func (r *userRepository) CreateUser(ctx context.Context, user models.User) *help
 		user.Embedding = pgvector.NewVector(vec)
 	}
 
-	if err := r.resources.MainDbConn.WithContext(ctx).Create(&user).Error; err != nil {
+	if err := db.WithContext(ctx).Create(&user).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
 			Title:   "Database Error",
 			Message: err.Error(),
-		}
-	}
-	var existingRole models.Role
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("name = ?", utils.User).First(&existingRole).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return &helpers.ResponseError{
-				Code:    fiber.StatusBadRequest,
-				Source:  helpers.WhereAmI(),
-				Title:   "Invalid Role",
-				Message: err.Error(),
-			}
-		}
-		return &helpers.ResponseError{
-			Code:    fiber.StatusInternalServerError,
-			Source:  helpers.WhereAmI(),
-			Title:   "Database Error",
-			Message: err.Error(),
-		}
-	}
-	var existingUserRole models.UserRole
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("user_id = ? AND role_id = ?", user.ID, existingRole.ID).First(&existingUserRole).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			userRole := models.UserRole{
-				UserID: user.ID,
-				RoleID: existingRole.ID,
-			}
-			if err := r.resources.MainDbConn.WithContext(ctx).Create(&userRole).Error; err != nil {
-				return &helpers.ResponseError{
-					Code:    fiber.StatusInternalServerError,
-					Source:  helpers.WhereAmI(),
-					Title:   "Database Error",
-					Message: err.Error(),
-				}
-			}
-		} else {
-			return &helpers.ResponseError{
-				Code:    fiber.StatusInternalServerError,
-				Source:  helpers.WhereAmI(),
-				Title:   "Database Error",
-				Message: err.Error(),
-			}
 		}
 	}
 	return nil
 }
 func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *helpers.ResponseError) {
 	var user models.User
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
+	db := r.getDB(ctx)
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -115,7 +77,8 @@ func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *h
 }
 func (r *userRepository) GetUsers(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, *helpers.ResponseError) {
 	var users []models.User
-	db := r.resources.MainDbConn.WithContext(ctx).Model(&models.User{})
+	db := r.getDB(ctx)
+	db = db.WithContext(ctx).Model(&models.User{})
 	db = utils.ApplySearch(ctx, r.resources.FastHTTPClient, db, search, true)
 	if db.Error != nil {
 		return nil, nil, nil, &helpers.ResponseError{
@@ -126,7 +89,7 @@ func (r *userRepository) GetUsers(ctx context.Context, pagination models.Paginat
 		}
 	}
 	db = utils.ApplyPagination(db, &pagination, models.User{})
-	if err := db.Debug().Find(&users).Error; err != nil {
+	if err := db.Find(&users).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil, nil, &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -145,6 +108,7 @@ func (r *userRepository) GetUsers(ctx context.Context, pagination models.Paginat
 	return users, &pagination, &search, nil
 }
 func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.User) *helpers.ResponseError {
+	db := r.getDB(ctx)
 	vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, user.GenerateSearchContext())
 	if err != nil {
 		fmt.Printf("Error generating embedding: %v\n", err)
@@ -152,7 +116,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 		user.Embedding = pgvector.NewVector(vec)
 	}
 
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.User{}).Error; err != nil {
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.User{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -168,7 +132,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(user).Error; err != nil {
+	if err := db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Updates(user).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -179,7 +143,8 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 	return nil
 }
 func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.User{}).Error; err != nil {
+	db := r.getDB(ctx)
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.User{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -195,7 +160,7 @@ func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.Respo
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Delete(&models.User{}).Error; err != nil {
+	if err := db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Delete(&models.User{}).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -206,8 +171,9 @@ func (r *userRepository) DeleteUser(ctx context.Context, id uint) *helpers.Respo
 	return nil
 }
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, *helpers.ResponseError) {
+	db := r.getDB(ctx)
 	var user models.User
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
+	if err := db.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -224,4 +190,10 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 		}
 	}
 	return &user, nil
+}
+func (r *userRepository) getDB(ctx context.Context) *gorm.DB {
+	if tx := txcontext.GetTxFromContext(ctx); tx != nil {
+		return tx
+	}
+	return r.resources.MainDbConn
 }

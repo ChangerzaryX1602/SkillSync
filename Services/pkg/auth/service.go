@@ -143,16 +143,6 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*s
 	return &newAccessToken, &newRefreshToken, nil
 }
 func (s *authService) Register(ctx context.Context, user models.User) []helpers.ResponseError {
-	if !utils.IsValidEmail(user.Email) {
-		return []helpers.ResponseError{
-			{
-				Code:    400,
-				Source:  helpers.WhereAmI(),
-				Title:   "Bad Request",
-				Message: "Invalid email format",
-			},
-		}
-	}
 	err := s.service.CreateUser(ctx, user)
 	if err != nil {
 		return err

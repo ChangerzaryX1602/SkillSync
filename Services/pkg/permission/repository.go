@@ -5,6 +5,7 @@ import (
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/domain"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
+	txcontext "github.com/ChangerzaryX1602/SkillSync/pkg/tx_context"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -25,7 +26,8 @@ func (r *permissionRepository) Migrate() error {
 }
 
 func (r *permissionRepository) CreatePermission(ctx context.Context, permission models.Permission) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.WithContext(ctx).Create(&permission).Error; err != nil {
+	db := r.getDB(ctx)
+	if err := db.WithContext(ctx).Create(&permission).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -37,8 +39,9 @@ func (r *permissionRepository) CreatePermission(ctx context.Context, permission 
 }
 
 func (r *permissionRepository) GetPermission(ctx context.Context, id uint) (*models.Permission, *helpers.ResponseError) {
+	db := r.getDB(ctx)
 	var permission models.Permission
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&permission).Error; err != nil {
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&permission).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -58,8 +61,9 @@ func (r *permissionRepository) GetPermission(ctx context.Context, id uint) (*mod
 }
 
 func (r *permissionRepository) GetPermissions(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.Permission, *models.Pagination, *models.Search, *helpers.ResponseError) {
+	db := r.getDB(ctx)
 	var permissions []models.Permission
-	db := r.resources.MainDbConn.WithContext(ctx).Model(&models.Permission{})
+	db = db.WithContext(ctx).Model(&models.Permission{})
 	db = utils.ApplySearch(ctx, r.resources.FastHTTPClient, db, search, false)
 	db = utils.ApplyPagination(db, &pagination, models.Permission{})
 	if err := db.Find(&permissions).Error; err != nil {
@@ -82,7 +86,8 @@ func (r *permissionRepository) GetPermissions(ctx context.Context, pagination mo
 }
 
 func (r *permissionRepository) UpdatePermission(ctx context.Context, id uint, permission models.Permission) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.Permission{}).Error; err != nil {
+	db := r.getDB(ctx)
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.Permission{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -98,7 +103,7 @@ func (r *permissionRepository) UpdatePermission(ctx context.Context, id uint, pe
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.WithContext(ctx).Model(&models.Permission{}).Where("id = ?", id).Updates(permission).Error; err != nil {
+	if err := db.WithContext(ctx).Model(&models.Permission{}).Where("id = ?", id).Updates(permission).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -110,7 +115,8 @@ func (r *permissionRepository) UpdatePermission(ctx context.Context, id uint, pe
 }
 
 func (r *permissionRepository) DeletePermission(ctx context.Context, id uint) *helpers.ResponseError {
-	if err := r.resources.MainDbConn.WithContext(ctx).Where("id = ?", id).First(&models.Permission{}).Error; err != nil {
+	db := r.getDB(ctx)
+	if err := db.WithContext(ctx).Where("id = ?", id).First(&models.Permission{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{
 				Code:    fiber.StatusNotFound,
@@ -126,7 +132,7 @@ func (r *permissionRepository) DeletePermission(ctx context.Context, id uint) *h
 			Message: err.Error(),
 		}
 	}
-	if err := r.resources.MainDbConn.WithContext(ctx).Delete(&models.Permission{}, id).Error; err != nil {
+	if err := db.WithContext(ctx).Delete(&models.Permission{}, id).Error; err != nil {
 		return &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
 			Source:  helpers.WhereAmI(),
@@ -135,4 +141,11 @@ func (r *permissionRepository) DeletePermission(ctx context.Context, id uint) *h
 		}
 	}
 	return nil
+}
+
+func (r *permissionRepository) getDB(ctx context.Context) *gorm.DB {
+	if tx := txcontext.GetTxFromContext(ctx); tx != nil {
+		return tx
+	}
+	return r.resources.MainDbConn
 }

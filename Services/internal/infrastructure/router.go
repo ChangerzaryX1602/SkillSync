@@ -9,6 +9,7 @@ import (
 	"github.com/ChangerzaryX1602/SkillSync/pkg/permission"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/role"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/role_permission"
+	txcontext "github.com/ChangerzaryX1602/SkillSync/pkg/tx_context"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/user"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/user_role"
 	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
@@ -57,7 +58,8 @@ func (s *Server) SetupRoutes(app *fiber.App) {
 	}
 	routerResources := handlers.NewRouterResources(s.JwtResources.JwtKeyfunc, s.MainDbConn, s.RedisStorage)
 	// App Services
-	userService := user.NewUserService(userRepository)
+	txManager := txcontext.NewTxManager(s.MainDbConn)
+	userService := user.NewUserService(userRepository, roleRepository, userRoleRepository, txManager)
 	authService := auth.NewAuthService(authRepository, userService)
 	permissionService := permission.NewPermissionService(permissionRepository)
 	roleService := role.NewRoleService(roleRepository)
