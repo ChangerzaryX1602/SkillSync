@@ -34,8 +34,7 @@ func (r *userRepository) Migrate() error {
 	return nil
 }
 func (r *userRepository) CreateUser(user models.User) *helpers.ResponseError {
-	searchContext := fmt.Sprintf("%s %s", user.Username, user.Email)
-	vec, err := utils.GenerateEmbeddingByOllama(searchContext)
+	vec, err := utils.GenerateEmbeddingByOllama(user.GenerateSearchContext())
 	if err != nil {
 		fmt.Printf("Error generating embedding: %v\n", err)
 	} else {
@@ -116,7 +115,7 @@ func (r *userRepository) GetUser(id uint) (*models.User, *helpers.ResponseError)
 func (r *userRepository) GetUsers(pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, *helpers.ResponseError) {
 	var users []models.User
 	db := r.resources.MainDbConn.Model(&models.User{})
-	db = utils.ApplySearch(db, search, true, r.resources.EmbeddingKey)
+	db = utils.ApplySearch(db, search, true)
 	if db.Error != nil {
 		return nil, nil, nil, &helpers.ResponseError{
 			Code:    fiber.StatusInternalServerError,
@@ -145,6 +144,13 @@ func (r *userRepository) GetUsers(pagination models.Pagination, search models.Se
 	return users, &pagination, &search, nil
 }
 func (r *userRepository) UpdateUser(id uint, user models.User) *helpers.ResponseError {
+	vec, err := utils.GenerateEmbeddingByOllama(user.GenerateSearchContext())
+	if err != nil {
+		fmt.Printf("Error generating embedding: %v\n", err)
+	} else {
+		user.Embedding = pgvector.NewVector(vec)
+	}
+
 	if err := r.resources.MainDbConn.Where("id = ?", id).First(&models.User{}).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &helpers.ResponseError{

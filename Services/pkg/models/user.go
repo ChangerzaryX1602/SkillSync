@@ -20,6 +20,9 @@ type User struct {
 	DeletedAt    gorm.DeletedAt  `json:"deleted_at,omitempty" gorm:"index" swaggerignore:"true"`
 }
 
+func (u *User) GenerateSearchContext() string {
+	return u.Username + " " + u.Email
+}
 func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
