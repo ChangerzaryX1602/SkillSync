@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
+	"github.com/ChangerzaryX1602/SkillSync/pkg/utils"
 	"github.com/gofiber/storage/redis"
 )
 
 const (
-	cacheTTL = 5 * time.Minute
+	cacheTTL     = 15 * time.Minute
+	cacheTTLList = 1 * time.Minute
 )
 
 type userCache struct {
@@ -47,7 +49,7 @@ func (c *userCache) Set(user *models.User) {
 	go func(u models.User) {
 		key := fmt.Sprintf("%s:%d", models.PkgUserGetUser, u.ID)
 		if bytes, err := json.Marshal(u); err == nil {
-			_ = c.store.Set(key, bytes, cacheTTL)
+			_ = c.store.Set(key, bytes, utils.RandomJitter(cacheTTL))
 		}
 	}(*user)
 }
@@ -91,7 +93,7 @@ func (c *userCache) SetByEmail(email string, user *models.User) {
 	go func(u models.User) {
 		key := fmt.Sprintf("%s:%s", models.PkgUserGetUserGmail, email)
 		if bytes, err := json.Marshal(u); err == nil {
-			_ = c.store.Set(key, bytes, cacheTTL)
+			_ = c.store.Set(key, bytes, utils.RandomJitter(cacheTTL))
 		}
 	}(*user)
 }
@@ -121,7 +123,7 @@ func (c *userCache) SetList(pagination models.Pagination, search models.Search, 
 	go func(us []models.User) {
 		key := fmt.Sprintf("%s:%s:%s", models.PkgUserGetUsers, pagination.GetPaginationString(), search.GetSearchString())
 		if bytes, err := json.Marshal(us); err == nil {
-			_ = c.store.Set(key, bytes, cacheTTL)
+			_ = c.store.Set(key, bytes, utils.RandomJitter(cacheTTLList))
 		}
 	}(users)
 }
