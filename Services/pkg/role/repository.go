@@ -36,6 +36,7 @@ func (r *roleRepository) CreateRole(ctx context.Context, role models.Role) *help
 			Message: err.Error(),
 		}
 	}
+	r.cache.InvalidateAllLists()
 	return nil
 }
 

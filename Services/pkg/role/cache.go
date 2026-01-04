@@ -1,8 +1,10 @@
 package role
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
@@ -97,8 +99,44 @@ func (c *roleCache) Invalidate(id uint, name string) {
 		key := fmt.Sprintf("%s:%s", models.PkgRoleGetRoleByName, name)
 		_ = c.store.Delete(key)
 	}()
+	c.InvalidateAllLists()
 }
-
+func (c *roleCache) InvalidateAllLists() {
+	if c.store == nil {
+		return
+	}
+	pattern := fmt.Sprintf("%s:*", models.PkgRoleGetRoles)
+	conn := c.store.Conn()
+	ctx := context.Background()
+	keys, err := conn.Keys(ctx, pattern).Result()
+	if err != nil {
+		return
+	}
+	if len(keys) == 0 {
+		return
+	}
+	const numWorkers = 100
+	keyChan := make(chan string, len(keys))
+	var wg sync.WaitGroup
+	workerCount := numWorkers
+	if len(keys) < numWorkers {
+		workerCount = len(keys)
+	}
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for key := range keyChan {
+				_ = c.store.Delete(key)
+			}
+		}()
+	}
+	for _, key := range keys {
+		keyChan <- key
+	}
+	close(keyChan)
+	wg.Wait()
+}
 func (c *roleCache) GetList(pagination models.Pagination, search models.Search) ([]models.Role, bool) {
 	if c.store == nil {
 		return nil, false

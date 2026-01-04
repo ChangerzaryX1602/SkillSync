@@ -5,7 +5,7 @@
   background: transparent;
 }
 
-.users-page {
+.roles-page {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -27,7 +27,7 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-family: 'Kanit', sans-serif;
-    text-shadow: 2px 2px 0 var(--neon-purple);
+    text-shadow: 2px 2px 0 var(--neon-pink);
   }
 }
 
@@ -100,8 +100,6 @@
 // Search
 .search-bar {
   margin-bottom: 1.5rem;
-  /* Search box styling is usually global or inside component, 
-     but ensure container spacing */
 }
 
 // Table
@@ -116,8 +114,8 @@
   transition: all 0.3s ease;
 
   &:hover {
-    border-color: var(--neon-purple);
-    box-shadow: 12px 12px 0px var(--neon-purple);
+    border-color: var(--neon-pink);
+    box-shadow: 12px 12px 0px var(--neon-pink);
   }
 }
 
@@ -353,7 +351,7 @@
   }
 }
 
-// Role Dialog & Permission Dialog specific styles
+// Role & Permission Dialog
 .role-content, .permission-content {
   .role-user, .permission-role {
     color: var(--text-secondary);
@@ -369,21 +367,20 @@
   }
 }
 
-.role-list, .permission-list {
+.permission-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 300px; /* Reduced for smaller dialogs */
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 0.5rem;
-  
-  /* Scrollbar */
+
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
 }
 
-.role-item, .permission-item {
+.permission-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -408,17 +405,11 @@
     border: 2px solid var(--text-secondary);
   }
 
-  .role-name, .permission-name {
-    color: var(--text-primary);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    font-family: 'Kanit', sans-serif;
-  }
-  
   .permission-name {
-    font-family: monospace;
-    font-size: 0.8125rem;
     color: var(--neon-blue);
+    font-size: 0.875rem;
+    font-family: monospace;
+    font-weight: 500;
   }
 }
 
@@ -438,10 +429,6 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-  }
-  
-  .btn.btn-primary {
-    justify-content: center;
   }
 
   .data-table {

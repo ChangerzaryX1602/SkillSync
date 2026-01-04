@@ -3,9 +3,9 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   AdminApiService,
-  User,
   Role,
-  UserRole,
+  Permission,
+  RolePermission,
   PaginationParams,
   Pagination,
 } from '../../../core/services/admin-api.service';
@@ -15,19 +15,18 @@ import { SearchBoxComponent } from '../../../shared/search-box/search-box';
 import { PaginationComponent } from '../../../shared/pagination/pagination';
 
 @Component({
-  selector: 'app-users',
+  selector: 'app-roles',
   imports: [ReactiveFormsModule, RouterLink, DialogComponent, SearchBoxComponent, PaginationComponent],
-  templateUrl: './users.html',
-  styleUrl: './users.scss',
+  templateUrl: './roles.html',
+  styleUrl: './roles.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UsersComponent implements OnInit {
+export class RolesComponent implements OnInit {
   private readonly adminApi = inject(AdminApiService);
   private readonly notification = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
 
   // State
-  protected readonly users = signal<User[]>([]);
   protected readonly roles = signal<Role[]>([]);
   protected readonly pagination = signal<Pagination | null>(null);
   protected readonly isLoading = signal(false);
@@ -39,21 +38,21 @@ export class UsersComponent implements OnInit {
   protected readonly isCreateDialogOpen = signal(false);
   protected readonly isEditDialogOpen = signal(false);
   protected readonly isDeleteDialogOpen = signal(false);
-  protected readonly isRoleDialogOpen = signal(false);
-  protected readonly selectedUser = signal<User | null>(null);
-  protected readonly selectedUserRoles = signal<UserRole[]>([]);
+  protected readonly isPermissionDialogOpen = signal(false);
+  protected readonly selectedRole = signal<Role | null>(null);
   protected readonly isSubmitting = signal(false);
+
+  // Permission states
+  protected readonly permissions = signal<Permission[]>([]);
+  protected readonly selectedRolePermissions = signal<RolePermission[]>([]);
 
   // Forms
   protected readonly createForm = this.fb.nonNullable.group({
-    username: ['', [Validators.required, Validators.minLength(3)]],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
   });
 
   protected readonly editForm = this.fb.nonNullable.group({
-    username: ['', [Validators.required, Validators.minLength(3)]],
-    email: ['', [Validators.required, Validators.email]],
+    name: ['', [Validators.required, Validators.minLength(2)]],
   });
 
   // Computed
@@ -65,11 +64,11 @@ export class UsersComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadUsers();
     this.loadRoles();
+    this.loadPermissions();
   }
 
-  protected loadUsers(params: PaginationParams = {}): void {
+  protected loadRoles(params: PaginationParams = {}): void {
     this.isLoading.set(true);
     const searchParams: PaginationParams = {
       page: params.page ?? 1,
@@ -81,26 +80,45 @@ export class UsersComponent implements OnInit {
       searchParams.keyword = this.searchKeyword();
     }
 
-    this.adminApi.getUsers(searchParams).subscribe({
+    this.adminApi.getRoles(searchParams).subscribe({
       next: (response) => {
         if (response.success) {
-          this.users.set(response.data);
+          this.roles.set(response.data);
           this.pagination.set(response.result.pagination);
         }
         this.isLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.isLoading.set(false);
-        this.notification.showError('ไม่สามารถโหลดข้อมูลผู้ใช้งานได้');
+        if (err.status === 403) {
+          this.notification.showError('คุณไม่มี Permission เพื่อทำสิ่งนี้');
+        } else {
+          this.notification.showError('ไม่สามารถโหลดข้อมูลบทบาทได้');
+        }
       },
     });
   }
 
-  protected loadRoles(): void {
-    this.adminApi.getRoles({ per_page: 999 }).subscribe({
+  protected loadPermissions(): void {
+    this.adminApi.getPermissions({ per_page: 999 }).subscribe({
       next: (response) => {
         if (response.success) {
-          this.roles.set(response.data);
+          this.permissions.set(response.data);
+        }
+      },
+      error: (err) => {
+        if (err.status === 403) {
+          this.notification.showError('คุณไม่มี Permission เพื่อทำสิ่งนี้');
+        }
+      },
+    });
+  }
+
+  protected loadRolePermissions(roleId: number): void {
+    this.adminApi.getRolePermissions(roleId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.selectedRolePermissions.set(response.data || []);
         }
       },
       error: (err) => {
@@ -113,21 +131,21 @@ export class UsersComponent implements OnInit {
 
   protected onSearch(keyword: string): void {
     this.searchKeyword.set(keyword);
-    this.loadUsers({ page: 1 });
+    this.loadRoles({ page: 1 });
   }
 
   protected onPageChange(page: number): void {
-    this.loadUsers({ page });
+    this.loadRoles({ page });
   }
 
   protected onPerPageChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     const newPerPage = parseInt(select.value, 10);
     this.perPage.set(newPerPage);
-    this.loadUsers({ page: 1, per_page: newPerPage });
+    this.loadRoles({ page: 1, per_page: newPerPage });
   }
 
-  // Create User
+  // Create Role
   protected openCreateDialog(): void {
     this.createForm.reset();
     this.isCreateDialogOpen.set(true);
@@ -146,133 +164,130 @@ export class UsersComponent implements OnInit {
     this.isSubmitting.set(true);
     const data = this.createForm.getRawValue();
 
-    this.adminApi.createUser(data).subscribe({
+    this.adminApi.createRole(data).subscribe({
       next: (response) => {
         if (response.success) {
-          this.notification.showSuccess('สร้างผู้ใช้งานสำเร็จ');
+          this.notification.showSuccess('สร้างบทบาทสำเร็จ');
           this.closeCreateDialog();
-          this.loadUsers();
+          this.loadRoles();
         }
         this.isSubmitting.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.isSubmitting.set(false);
+        if (err.status === 403) {
+          this.notification.showError('คุณไม่มี Permission เพื่อทำสิ่งนี้');
+        }
       },
     });
   }
 
-  // Edit User
-  protected openEditDialog(user: User): void {
-    this.selectedUser.set(user);
+  // Edit Role
+  protected openEditDialog(role: Role): void {
+    this.selectedRole.set(role);
     this.editForm.patchValue({
-      username: user.username,
-      email: user.email,
+      name: role.name,
     });
     this.isEditDialogOpen.set(true);
   }
 
   protected closeEditDialog(): void {
     this.isEditDialogOpen.set(false);
-    this.selectedUser.set(null);
+    this.selectedRole.set(null);
   }
 
   protected submitEdit(): void {
-    if (this.editForm.invalid || !this.selectedUser()) {
+    if (this.editForm.invalid || !this.selectedRole()) {
       this.editForm.markAllAsTouched();
       return;
     }
 
     this.isSubmitting.set(true);
     const data = this.editForm.getRawValue();
-    const userId = this.selectedUser()!.id;
+    const roleId = this.selectedRole()!.id;
 
-    this.adminApi.updateUser(userId, data).subscribe({
+    this.adminApi.updateRole(roleId, data).subscribe({
       next: (response) => {
         if (response.success) {
-          this.notification.showSuccess('แก้ไขผู้ใช้งานสำเร็จ');
+          this.notification.showSuccess('แก้ไขบทบาทสำเร็จ');
           this.closeEditDialog();
-          this.loadUsers({ page: this.currentPage() });
+          this.loadRoles({ page: this.currentPage() });
         }
         this.isSubmitting.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.isSubmitting.set(false);
+        if (err.status === 403) {
+          this.notification.showError('คุณไม่มี Permission เพื่อทำสิ่งนี้');
+        }
       },
     });
   }
 
-  // Delete User
-  protected openDeleteDialog(user: User): void {
-    this.selectedUser.set(user);
+  // Delete Role
+  protected openDeleteDialog(role: Role): void {
+    this.selectedRole.set(role);
     this.isDeleteDialogOpen.set(true);
   }
 
   protected closeDeleteDialog(): void {
     this.isDeleteDialogOpen.set(false);
-    this.selectedUser.set(null);
+    this.selectedRole.set(null);
   }
 
   protected confirmDelete(): void {
-    if (!this.selectedUser()) return;
+    if (!this.selectedRole()) return;
 
     this.isSubmitting.set(true);
-    const userId = this.selectedUser()!.id;
+    const roleId = this.selectedRole()!.id;
 
-    this.adminApi.deleteUser(userId).subscribe({
+    this.adminApi.deleteRole(roleId).subscribe({
       next: (response) => {
         if (response.success) {
-          this.notification.showSuccess('ลบผู้ใช้งานสำเร็จ');
+          this.notification.showSuccess('ลบบทบาทสำเร็จ');
           this.closeDeleteDialog();
-          this.loadUsers({ page: this.currentPage() });
+          this.loadRoles({ page: this.currentPage() });
         }
         this.isSubmitting.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.isSubmitting.set(false);
-      },
-    });
-  }
-
-  // Role Management
-  protected openRoleDialog(user: User): void {
-    this.selectedUser.set(user);
-    this.loadUserRoles(user.id);
-    this.isRoleDialogOpen.set(true);
-  }
-
-  protected closeRoleDialog(): void {
-    this.isRoleDialogOpen.set(false);
-    this.selectedUser.set(null);
-    this.selectedUserRoles.set([]);
-  }
-
-  protected loadUserRoles(userId: number): void {
-    this.adminApi.getUserRoles(userId).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.selectedUserRoles.set(response.data);
+        if (err.status === 403) {
+          this.notification.showError('คุณไม่มี Permission เพื่อทำสิ่งนี้');
         }
       },
     });
   }
 
-  protected hasRole(roleId: number): boolean {
-    return this.selectedUserRoles().some((ur) => ur.role_id === roleId);
+  // Permission Dialog
+  protected openPermissionDialog(role: Role): void {
+    this.selectedRole.set(role);
+    this.loadRolePermissions(role.id);
+    this.isPermissionDialogOpen.set(true);
   }
 
-  protected toggleRole(roleId: number): void {
-    const userId = this.selectedUser()?.id;
-    if (!userId) return;
+  protected closePermissionDialog(): void {
+    this.isPermissionDialogOpen.set(false);
+    this.selectedRole.set(null);
+    this.selectedRolePermissions.set([]);
+  }
 
-    const existingUserRole = this.selectedUserRoles().find((ur) => ur.role_id === roleId);
+  protected hasPermission(permissionId: number): boolean {
+    return this.selectedRolePermissions().some((rp) => rp.permission_id === permissionId);
+  }
 
-    if (existingUserRole) {
-      this.adminApi.removeUserRole(existingUserRole.id).subscribe({
+  protected togglePermission(permissionId: number): void {
+    const roleId = this.selectedRole()?.id;
+    if (!roleId) return;
+
+    const existingRolePermission = this.selectedRolePermissions().find((rp) => rp.permission_id === permissionId);
+
+    if (existingRolePermission) {
+      this.adminApi.removeRolePermission(existingRolePermission.id).subscribe({
         next: (response) => {
           if (response.success) {
-            this.notification.showSuccess('ลบบทบาทสำเร็จ');
-            // Reload to ensure correct state
-            this.loadUserRoles(userId);
+            this.notification.showSuccess('ลบสิทธิสำเร็จ');
+            this.loadRolePermissions(roleId);
           }
         },
         error: (err) => {
@@ -282,12 +297,11 @@ export class UsersComponent implements OnInit {
         },
       });
     } else {
-      this.adminApi.assignRole(userId, roleId).subscribe({
+      this.adminApi.assignPermission(roleId, permissionId).subscribe({
         next: (response) => {
           if (response.success) {
-            this.notification.showSuccess('เพิ่มบทบาทสำเร็จ');
-            // Reload to get the new UserRole with correct ID
-            this.loadUserRoles(userId);
+            this.notification.showSuccess('เพิ่มสิทธิสำเร็จ');
+            this.loadRolePermissions(roleId);
           }
         },
         error: (err) => {
@@ -297,6 +311,10 @@ export class UsersComponent implements OnInit {
         },
       });
     }
+  }
+
+  protected formatPermission(permission: Permission): string {
+    return `${permission.group}:${permission.name}`;
   }
 
   protected formatDate(dateStr: string): string {

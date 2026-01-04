@@ -1,0 +1,43 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: self-hosted
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script: |
+            set -e
+
+            # NOTE: PROJECT_PATH should be the absolute path to your project on the server
+            # Example: /home/user/SkillSync
+            TARGET_DIR="${{ secrets.PROJECT_PATH }}"
+
+            if [ -z "$TARGET_DIR" ]; then
+              echo "Error: PROJECT_PATH secret is not set"
+              exit 1
+            fi
+
+            echo "Navigating to $TARGET_DIR..."
+            cd "$TARGET_DIR"
+
+            echo "Pulling latest changes..."
+            git pull origin main
+
+            echo "Starting services..."
+            docker compose up -d --build --remove-orphans
+
+            echo "Cleaning up..."
+            docker image prune -f

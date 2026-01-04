@@ -1,8 +1,8 @@
 <div class="auth-container">
   <div class="auth-card">
     <div class="auth-header">
-      <h1>Welcome Back</h1>
-      <p>Sign in to your account</p>
+      <h1>ยินดีต้อนรับกลับ</h1>
+      <p>เข้าสู่ระบบเพื่อใช้งานบัญชีของคุณ</p>
     </div>
 
     @if (errorMessage()) {
@@ -14,12 +14,12 @@
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
       <div class="form-group">
-        <label for="email">Email</label>
+        <label for="email">อีเมล</label>
         <input
           type="email"
           id="email"
           formControlName="email"
-          placeholder="Enter your email"
+          placeholder="กรอกอีเมลของคุณ"
           autocomplete="email"
           [attr.aria-invalid]="loginForm.controls.email.invalid && loginForm.controls.email.touched"
           [attr.aria-describedby]="
@@ -30,19 +30,19 @@
         />
         @if (loginForm.controls.email.invalid && loginForm.controls.email.touched) {
         <span class="error-text" id="email-error">
-          @if (loginForm.controls.email.errors?.['required']) { Email is required } @else if
-          (loginForm.controls.email.errors?.['email']) { Please enter a valid email }
+          @if (loginForm.controls.email.errors?.['required']) { กรุณากรอกอีเมล } @else if
+          (loginForm.controls.email.errors?.['email']) { รูปแบบอีเมลไม่ถูกต้อง }
         </span>
         }
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
+        <label for="password">รหัสผ่าน</label>
         <input
           type="password"
           id="password"
           formControlName="password"
-          placeholder="Enter your password"
+          placeholder="กรอกรหัสผ่านของคุณ"
           autocomplete="current-password"
           [attr.aria-invalid]="
             loginForm.controls.password.invalid && loginForm.controls.password.touched
@@ -55,9 +55,8 @@
         />
         @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
         <span class="error-text" id="password-error">
-          @if (loginForm.controls.password.errors?.['required']) { Password is required } @else if
-          (loginForm.controls.password.errors?.['minlength']) { Password must be at least 6
-          characters }
+          @if (loginForm.controls.password.errors?.['required']) { กรุณากรอกรหัสผ่าน } @else if
+          (loginForm.controls.password.errors?.['minlength']) { รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร }
         </span>
         }
       </div>
@@ -70,14 +69,14 @@
       >
         @if (isLoading()) {
         <span class="spinner" aria-hidden="true"></span>
-        Signing in... } @else { Sign In }
+        กำลังเข้าสู่ระบบ... } @else { เข้าสู่ระบบ }
       </button>
     </form>
 
     <div class="auth-footer">
       <p>
-        Don't have an account?
-        <a routerLink="/register">Create one</a>
+        ยังไม่มีบัญชี?
+        <a routerLink="/register">สมัครสมาชิก</a>
       </p>
     </div>
   </div>

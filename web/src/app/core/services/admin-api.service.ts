@@ -39,6 +39,22 @@ export interface UserRole {
   updated_at: string;
 }
 
+export interface Permission {
+  id: number;
+  group: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RolePermission {
+  id: number;
+  role_id: number;
+  permission_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Pagination {
   page: number;
   per_page: number;
@@ -132,12 +148,25 @@ export class AdminApiService {
     let httpParams = new HttpParams();
     if (params.page) httpParams = httpParams.set('page', params.page.toString());
     if (params.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
+    if (params.keyword) httpParams = httpParams.set('keyword', params.keyword);
 
     return this.http.get<PaginatedResponse<Role>>(`${this.apiUrl}/api/v1/roles`, { params: httpParams });
   }
 
   getRole(id: number): Observable<ApiResponse<Role>> {
     return this.http.get<ApiResponse<Role>>(`${this.apiUrl}/api/v1/roles/${id}`);
+  }
+
+  createRole(data: { name: string }): Observable<ApiResponse<Role>> {
+    return this.http.post<ApiResponse<Role>>(`${this.apiUrl}/api/v1/roles`, data);
+  }
+
+  updateRole(id: number, data: { name: string }): Observable<ApiResponse<Role>> {
+    return this.http.put<ApiResponse<Role>>(`${this.apiUrl}/api/v1/roles/${id}`, data);
+  }
+
+  deleteRole(id: number): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/api/v1/roles/${id}`);
   }
 
   // ===== USER ROLE APIs =====
@@ -159,5 +188,36 @@ export class AdminApiService {
 
   removeAllUserRoles(userId: number): Observable<ApiResponse<null>> {
     return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/api/v1/user/roles/user/${userId}`);
+  }
+
+  // ===== PERMISSION APIs =====
+
+  getPermissions(params: PaginationParams = {}): Observable<PaginatedResponse<Permission>> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of({ success: false, data: [], result: { pagination: {} as Pagination, search: {} as Search } });
+    }
+
+    let httpParams = new HttpParams();
+    if (params.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
+
+    return this.http.get<PaginatedResponse<Permission>>(`${this.apiUrl}/api/v1/permissions`, { params: httpParams });
+  }
+
+  // ===== ROLE PERMISSION APIs =====
+
+  getRolePermissions(roleId: number): Observable<ApiResponse<RolePermission[]>> {
+    return this.http.get<ApiResponse<RolePermission[]>>(`${this.apiUrl}/api/v1/role/permissions/role/${roleId}`);
+  }
+
+  assignPermission(roleId: number, permissionId: number): Observable<ApiResponse<RolePermission>> {
+    return this.http.post<ApiResponse<RolePermission>>(`${this.apiUrl}/api/v1/role/permissions`, {
+      role_id: roleId,
+      permission_id: permissionId,
+    });
+  }
+
+  removeRolePermission(rolePermissionId: number): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(`${this.apiUrl}/api/v1/role/permissions/${rolePermissionId}`);
   }
 }

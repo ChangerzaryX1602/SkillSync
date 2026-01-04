@@ -1,0 +1,153 @@
+<div class="roles-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>จัดการบทบาท</h1>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreateDialog()">
+      <span>+</span> เพิ่มบทบาท
+    </button>
+  </div>
+
+  <!-- Search -->
+  <app-search-box
+    placeholder="ค้นหาบทบาท..."
+    (search)="onSearch($event)"
+  />
+
+  <!-- Table -->
+  <div class="table-container">
+    @if (isLoading()) {
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>ชื่อบทบาท</th>
+          <th>สร้างเมื่อ</th>
+          <th>การดำเนินการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (role of roles(); track role.id) {
+          <tr>
+            <td>{{ role.id }}</td>
+            <td>{{ role.name }}</td>
+            <td>{{ formatDate(role.created_at) }}</td>
+            <td class="actions">
+              <button type="button" class="btn-icon" title="สิทธิ" (click)="openPermissionDialog(role)">🔑</button>
+              <button type="button" class="btn-icon" title="แก้ไข" (click)="openEditDialog(role)">✏️</button>
+              <button type="button" class="btn-icon btn-danger" title="ลบ" (click)="openDeleteDialog(role)">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4" class="empty-state">ไม่พบข้อมูลบทบาท</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  @if (pagination()) {
+    <div class="pagination-info">
+      <div class="per-page-selector">
+        <label for="per-page">แสดง</label>
+        <select id="per-page" [value]="perPage()" (change)="onPerPageChange($event)">
+          @for (option of perPageOptions; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+        <span>รายการ</span>
+      </div>
+     @if (totalPages() > 1) {
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          (pageChange)="onPageChange($event)"
+        />
+      } @else {
+        <span class="page-info">หน้า {{ currentPage() }} จาก {{ totalPages() }}</span>
+      }
+      <span class="total-count">ทั้งหมด {{ pagination()?.total ?? 0 }} รายการ</span>
+    </div>
+  }
+</div>
+
+<!-- Create Dialog -->
+<app-dialog [isOpen]="isCreateDialogOpen()" title="เพิ่มบทบาทใหม่" (close)="closeCreateDialog()">
+  <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+    <div class="form-group">
+      <label for="create-name">ชื่อบทบาท</label>
+      <input id="create-name" type="text" formControlName="name" placeholder="กรอกชื่อบทบาท" />
+      @if (createForm.controls.name.touched && createForm.controls.name.errors) {
+        <span class="error">ชื่อบทบาทต้องมีอย่างน้อย 2 ตัวอักษร</span>
+      }
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeCreateDialog()">ยกเลิก</button>
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+        @if (isSubmitting()) { กำลังบันทึก... } @else { บันทึก }
+      </button>
+    </div>
+  </form>
+</app-dialog>
+
+<!-- Edit Dialog -->
+<app-dialog [isOpen]="isEditDialogOpen()" title="แก้ไขบทบาท" (close)="closeEditDialog()">
+  <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+    <div class="form-group">
+      <label for="edit-name">ชื่อบทบาท</label>
+      <input id="edit-name" type="text" formControlName="name" placeholder="กรอกชื่อบทบาท" />
+      @if (editForm.controls.name.touched && editForm.controls.name.errors) {
+        <span class="error">ชื่อบทบาทต้องมีอย่างน้อย 2 ตัวอักษร</span>
+      }
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeEditDialog()">ยกเลิก</button>
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+        @if (isSubmitting()) { กำลังบันทึก... } @else { บันทึก }
+      </button>
+    </div>
+  </form>
+</app-dialog>
+
+<!-- Delete Confirmation Dialog -->
+<app-dialog [isOpen]="isDeleteDialogOpen()" title="ยืนยันการลบ" (close)="closeDeleteDialog()">
+  <div class="confirm-content">
+    <p>คุณต้องการลบบทบาท <strong>{{ selectedRole()?.name }}</strong> หรือไม่?</p>
+    <p class="warning">การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+  </div>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-secondary" (click)="closeDeleteDialog()">ยกเลิก</button>
+    <button type="button" class="btn btn-danger" [disabled]="isSubmitting()" (click)="confirmDelete()">
+      @if (isSubmitting()) { กำลังลบ... } @else { ลบ }
+    </button>
+  </div>
+</app-dialog>
+
+<!-- Permission Dialog -->
+<app-dialog [isOpen]="isPermissionDialogOpen()" title="จัดการสิทธิ" (close)="closePermissionDialog()">
+  <div class="permission-content">
+    <p class="permission-role">บทบาท: <strong>{{ selectedRole()?.name }}</strong></p>
+    <div class="permission-list">
+      @for (permission of permissions(); track permission.id) {
+        <label class="permission-item" (click)="togglePermission(permission.id)">
+          <input
+            type="checkbox"
+            [checked]="hasPermission(permission.id)"
+            (change)="$event.stopPropagation()"
+          />
+          <span class="permission-name">{{ formatPermission(permission) }}</span>
+        </label>
+      } @empty {
+        <p class="empty">ไม่พบข้อมูลสิทธิ</p>
+      }
+    </div>
+  </div>
+</app-dialog>
