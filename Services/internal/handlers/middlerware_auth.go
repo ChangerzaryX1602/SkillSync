@@ -74,7 +74,7 @@ func (r *RouterResources) ExtractPerms(userId string) ([]string, error) {
 	go func(c string, p []string) {
 		if r.RedisStorage != nil && len(p) > 0 {
 			if marshaledBytes, err := json.Marshal(p); err == nil {
-				_ = r.RedisStorage.Set(c, marshaledBytes, 5*time.Minute)
+				_ = r.RedisStorage.Set(c, marshaledBytes, 30*time.Second)
 			}
 		}
 	}(cacheKey, permissions)

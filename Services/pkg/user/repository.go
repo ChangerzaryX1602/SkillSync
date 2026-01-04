@@ -60,9 +60,10 @@ func (r *userRepository) retryEmbedding() {
 
 		userID := uint(data["user_id"].(float64))
 		searchContext := data["context"].(string)
-
-		fmt.Printf("Generating embedding for User ID: %v...\n", userID)
-
+		if userID == 0 {
+			return nil
+		}
+		log.Default().Println("Generating embedding for User ID:", userID)
 		vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, searchContext)
 		if err != nil {
 			return err
@@ -76,6 +77,12 @@ func (r *userRepository) retryEmbedding() {
 		var user models.User
 		if err := db.Select("email").First(&user, userID).Error; err == nil {
 			r.cache.Invalidate(userID, user.Email)
+		} else {
+			if err == gorm.ErrRecordNotFound {
+				r.cache.Invalidate(userID, user.Email)
+				return nil
+			}
+			return err
 		}
 
 		return nil
@@ -87,6 +94,22 @@ func (r *userRepository) retryEmbedding() {
 }
 func (r *userRepository) CreateUser(ctx context.Context, user models.User) (*models.User, *helpers.ResponseError) {
 	db := r.getDB(ctx)
+	if err := db.WithContext(ctx).Where("email = ?", user.Email).First(&models.User{}).Error; err == nil {
+		return nil, &helpers.ResponseError{
+			Code:    fiber.StatusConflict,
+			Source:  helpers.WhereAmI(),
+			Title:   "Conflict",
+			Message: "User with this email already exists.",
+		}
+	}
+	if err := db.WithContext(ctx).Where("username = ?", user.Username).First(&models.User{}).Error; err == nil {
+		return nil, &helpers.ResponseError{
+			Code:    fiber.StatusConflict,
+			Source:  helpers.WhereAmI(),
+			Title:   "Conflict",
+			Message: "User with this username already exists.",
+		}
+	}
 	vec, err := utils.GenerateEmbeddingByOllama(ctx, r.resources.FastHTTPClient, user.GenerateSearchContext())
 	embeddingFailed := false
 	if err == nil {
@@ -95,17 +118,17 @@ func (r *userRepository) CreateUser(ctx context.Context, user models.User) (*mod
 		fmt.Println("Embedding failed:", err)
 		embeddingFailed = true
 	}
-
-	if err := db.WithContext(ctx).Create(&user).Error; err != nil {
-		return nil, &helpers.ResponseError{
-			Code:    fiber.StatusInternalServerError,
-			Source:  helpers.WhereAmI(),
-			Title:   "Database Error",
-			Message: err.Error(),
-		}
-	}
-
 	if embeddingFailed {
+		user.Embedding = pgvector.NewVector(make([]float32, 1024))
+		if err := db.WithContext(ctx).Create(&user).Error; err != nil {
+			return nil, &helpers.ResponseError{
+				Code:    fiber.StatusInternalServerError,
+				Source:  helpers.WhereAmI(),
+				Title:   "Database Error",
+				Message: err.Error(),
+			}
+		}
+
 		payload, _ := json.Marshal(map[string]interface{}{
 			"user_id": user.ID,
 			"context": user.GenerateSearchContext(),
@@ -122,7 +145,15 @@ func (r *userRepository) CreateUser(ctx context.Context, user models.User) (*mod
 		}
 		fmt.Printf(" [x] Enqueued task: id=%s queue=%s\n", info.ID, info.Queue)
 	}
-
+	if err := db.WithContext(ctx).Create(&user).Error; err != nil {
+		return nil, &helpers.ResponseError{
+			Code:    fiber.StatusInternalServerError,
+			Source:  helpers.WhereAmI(),
+			Title:   "Database Error",
+			Message: err.Error(),
+		}
+	}
+	r.cache.InvalidateAllLists()
 	return &user, nil
 }
 func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *helpers.ResponseError) {
@@ -151,9 +182,9 @@ func (r *userRepository) GetUser(ctx context.Context, id uint) (*models.User, *h
 	return &user, nil
 }
 func (r *userRepository) GetUsers(ctx context.Context, pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, *helpers.ResponseError) {
-	if users, found := r.cache.GetList(pagination, search); found {
+	if users, p, s, found := r.cache.GetList(pagination, search); found {
 		fmt.Println("CACHE HITT")
-		return users, &pagination, &search, nil
+		return users, p, s, nil
 	}
 	fmt.Println("CACHE MISS")
 	var users []models.User
@@ -223,7 +254,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 	}
 	if embeddingFailed {
 		payload, _ := json.Marshal(map[string]interface{}{
-			"user_id": user.ID,
+			"user_id": id,
 			"context": user.GenerateSearchContext(),
 		})
 		task := asynq.NewTask("generate_embedding", payload)
@@ -237,6 +268,7 @@ func (r *userRepository) UpdateUser(ctx context.Context, id uint, user models.Us
 			}
 		}
 		fmt.Printf(" [x] Enqueued task: id=%s queue=%s\n", info.ID, info.Queue)
+		r.cache.Invalidate(id, user.Email)
 		return nil
 	}
 	r.cache.Invalidate(id, user.Email)

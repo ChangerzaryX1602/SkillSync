@@ -65,11 +65,13 @@ func NewServer(version, buildTag, runEnv string) (server *Server, err error) {
 		return
 	}
 	redisOpt := asynq.RedisClientOpt{
-		Addr: viper.GetString("db.redis.host") + ":" + string(rune(viper.GetInt("db.redis.port"))),
+		Addr: fmt.Sprintf("%s:%d",
+			viper.GetString("db.redis.host"),
+			viper.GetInt("db.redis.port"),
+		),
 	}
 
 	asynqClient := asynq.NewClient(redisOpt)
-	defer asynqClient.Close()
 
 	fastHTTPClient := datasources.NewFastHTTPClient(true)
 
@@ -155,6 +157,12 @@ func (s *Server) Run() (err error) {
 	// Your cleanup tasks go here
 	if s.RedisStorage != nil {
 		s.RedisStorage.Close()
+	}
+	if s.AsynqClient != nil {
+		s.AsynqClient.Close()
+	}
+	if s.FastHTTPClient != nil {
+		s.FastHTTPClient.CloseIdleConnections()
 	}
 	fmt.Println("Successful shutdown.")
 	return

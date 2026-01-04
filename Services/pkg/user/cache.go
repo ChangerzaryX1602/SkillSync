@@ -1,8 +1,10 @@
 package user
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ChangerzaryX1602/SkillSync/pkg/models"
@@ -66,6 +68,7 @@ func (c *userCache) Invalidate(id uint, email string) {
 		key := fmt.Sprintf("%s:%s", models.PkgUserGetUserGmail, email)
 		_ = c.store.Delete(key)
 	}()
+	c.InvalidateAllLists()
 }
 
 func (c *userCache) GetByEmail(email string) (*models.User, bool) {
@@ -97,24 +100,59 @@ func (c *userCache) SetByEmail(email string, user *models.User) {
 		}
 	}(*user)
 }
-
-func (c *userCache) GetList(pagination models.Pagination, search models.Search) ([]models.User, bool) {
+func (c *userCache) InvalidateAllLists() {
 	if c.store == nil {
-		return nil, false
+		return
+	}
+	pattern := fmt.Sprintf("%s:*", models.PkgUserGetUsers)
+	conn := c.store.Conn()
+	ctx := context.Background()
+	keys, err := conn.Keys(ctx, pattern).Result()
+	if err != nil {
+		return
+	}
+	if len(keys) == 0 {
+		return
+	}
+	const numWorkers = 100
+	keyChan := make(chan string, len(keys))
+	var wg sync.WaitGroup
+	workerCount := numWorkers
+	if len(keys) < numWorkers {
+		workerCount = len(keys)
+	}
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for key := range keyChan {
+				_ = c.store.Delete(key)
+			}
+		}()
+	}
+	for _, key := range keys {
+		keyChan <- key
+	}
+	close(keyChan)
+	wg.Wait()
+}
+func (c *userCache) GetList(pagination models.Pagination, search models.Search) ([]models.User, *models.Pagination, *models.Search, bool) {
+	if c.store == nil {
+		return nil, nil, nil, false
 	}
 	key := fmt.Sprintf("%s:%s:%s", models.PkgUserGetUsers, pagination.GetPaginationString(), search.GetSearchString())
 	fmt.Println("key get", key)
 	bytes, err := c.store.Get(key)
 	if err != nil || len(bytes) == 0 {
-		return nil, false
+		return nil, nil, nil, false
 	}
 
-	var users []models.User
-	if err := json.Unmarshal(bytes, &users); err != nil {
+	var usersCache UsersCache
+	if err := json.Unmarshal(bytes, &usersCache); err != nil {
 		fmt.Println("err", err)
-		return nil, false
+		return nil, nil, nil, false
 	}
-	return users, true
+	return usersCache.Users, &usersCache.Pagination, &usersCache.Search, true
 }
 
 func (c *userCache) SetList(pagination models.Pagination, search models.Search, users []models.User) {
@@ -122,8 +160,13 @@ func (c *userCache) SetList(pagination models.Pagination, search models.Search, 
 		return
 	}
 	go func(us []models.User, p models.Pagination, s models.Search) {
+		usersCache := UsersCache{
+			Users:      us,
+			Pagination: p,
+			Search:     s,
+		}
 		key := fmt.Sprintf("%s:%s:%s", models.PkgUserGetUsers, p.GetPaginationString(), s.GetSearchString())
-		if bytes, err := json.Marshal(us); err == nil {
+		if bytes, err := json.Marshal(usersCache); err == nil {
 			fmt.Println("key set", key)
 			err = c.store.Set(key, bytes, utils.RandomJitter(cacheTTLList))
 			if err != nil {
@@ -131,4 +174,10 @@ func (c *userCache) SetList(pagination models.Pagination, search models.Search, 
 			}
 		}
 	}(users, pagination, search)
+}
+
+type UsersCache struct {
+	Users []models.User `json:"users"`
+	models.Pagination
+	models.Search
 }

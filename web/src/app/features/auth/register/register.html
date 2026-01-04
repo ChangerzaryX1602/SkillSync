@@ -1,0 +1,111 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Create Account</h1>
+      <p>Join us and get started</p>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="error-banner" role="alert">
+        <span class="error-icon" aria-hidden="true">⚠</span>
+        {{ errorMessage() }}
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="success-banner" role="status">
+        <span class="success-icon" aria-hidden="true">✓</span>
+        {{ successMessage() }}
+      </div>
+    }
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          placeholder="Choose a username"
+          autocomplete="username"
+          [attr.aria-invalid]="registerForm.controls.username.invalid && registerForm.controls.username.touched"
+          [attr.aria-describedby]="registerForm.controls.username.invalid && registerForm.controls.username.touched ? 'username-error' : null"
+        />
+        @if (registerForm.controls.username.invalid && registerForm.controls.username.touched) {
+          <span class="error-text" id="username-error">
+            @if (registerForm.controls.username.errors?.['required']) {
+              Username is required
+            } @else if (registerForm.controls.username.errors?.['minlength']) {
+              Username must be at least 3 characters
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="Enter your email"
+          autocomplete="email"
+          [attr.aria-invalid]="registerForm.controls.email.invalid && registerForm.controls.email.touched"
+          [attr.aria-describedby]="registerForm.controls.email.invalid && registerForm.controls.email.touched ? 'email-error' : null"
+        />
+        @if (registerForm.controls.email.invalid && registerForm.controls.email.touched) {
+          <span class="error-text" id="email-error">
+            @if (registerForm.controls.email.errors?.['required']) {
+              Email is required
+            } @else if (registerForm.controls.email.errors?.['email']) {
+              Please enter a valid email
+            }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="Create a password"
+          autocomplete="new-password"
+          [attr.aria-invalid]="registerForm.controls.password.invalid && registerForm.controls.password.touched"
+          [attr.aria-describedby]="registerForm.controls.password.invalid && registerForm.controls.password.touched ? 'password-error' : null"
+        />
+        @if (registerForm.controls.password.invalid && registerForm.controls.password.touched) {
+          <span class="error-text" id="password-error">
+            @if (registerForm.controls.password.errors?.['required']) {
+              Password is required
+            } @else if (registerForm.controls.password.errors?.['minlength']) {
+              Password must be at least 6 characters
+            }
+          </span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isLoading()"
+        [class.loading]="isLoading()"
+      >
+        @if (isLoading()) {
+          <span class="spinner" aria-hidden="true"></span>
+          Creating account...
+        } @else {
+          Create Account
+        }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

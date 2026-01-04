@@ -1,0 +1,222 @@
+<div class="app-layout" [class.sidebar-collapsed]="!isSidebarOpen()">
+  <!-- Notifications Toast -->
+  <div class="notifications-container" role="alert" aria-live="polite">
+    @for (notification of notificationService.notifications(); track notification.id) {
+      <div class="notification" [class]="'notification-' + notification.type">
+        <span class="notification-message">{{ notification.message }}</span>
+        <button
+          type="button"
+          class="notification-close"
+          (click)="dismissNotification(notification.id)"
+          aria-label="Dismiss notification"
+        >
+          ✕
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        @if (isSidebarOpen()) {
+          <span class="logo-text">SkillSync</span>
+        }
+      </div>
+      <button
+        type="button"
+        class="toggle-btn"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="isSidebarOpen() ? 'Collapse sidebar' : 'Expand sidebar'"
+      >
+        @if (isSidebarOpen()) {
+          ◀
+        } @else {
+          ▶
+        }
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">Dashboard</span>
+        }
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">📚</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">My Courses</span>
+        }
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">🎯</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">Skills</span>
+        }
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">👥</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">Community</span>
+        }
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">📊</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">Analytics</span>
+        }
+      </a>
+      <a href="#" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">Settings</span>
+        }
+      </a>
+
+      <!-- Admin Menu (only visible for admins) -->
+      @if (isAdmin()) {
+        <div class="admin-menu-container">
+          <button
+            type="button"
+            class="nav-item admin-toggle"
+            (click)="toggleAdminMenu()"
+            [class.open]="isAdminMenuOpen()"
+          >
+            <span class="nav-icon">🔐</span>
+            @if (isSidebarOpen()) {
+              <span class="nav-text">Admin Menu</span>
+              <span class="arrow" [class.rotated]="isAdminMenuOpen()">▼</span>
+            }
+          </button>
+
+          @if (isAdminMenuOpen() && isSidebarOpen()) {
+            <div class="admin-submenu">
+              <a routerLink="/admin/users" class="submenu-item">
+                <span class="submenu-icon">👤</span>
+                <span class="submenu-text">จัดการผู้ใช้งาน</span>
+              </a>
+              <a href="#" class="submenu-item">
+                <span class="submenu-icon">🎭</span>
+                <span class="submenu-text">จัดการบทบาท</span>
+              </a>
+              <a href="#" class="submenu-item">
+                <span class="submenu-icon">🔑</span>
+                <span class="submenu-text">จัดการสิทธิ</span>
+              </a>
+            </div>
+          }
+        </div>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button type="button" class="logout-btn" (click)="logout()">
+        <span class="nav-icon">🚪</span>
+        @if (isSidebarOpen()) {
+          <span class="nav-text">Logout</span>
+        }
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <h1>
+          Welcome back
+          @if (currentUser(); as user) {
+            , {{ user.username }}
+          }
+          ! 👋
+        </h1>
+        <p>Continue your learning journey</p>
+      </div>
+      <div class="header-right">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search courses, skills..." aria-label="Search" />
+        </div>
+        <button type="button" class="notification-btn" aria-label="Notifications">
+          🔔
+          <span class="notification-badge">3</span>
+        </button>
+        <div class="avatar">
+          <img src="https://picsum.photos/seed/user/100/100" alt="User avatar" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Stats Grid -->
+    <section class="stats-grid" aria-label="Statistics">
+      @for (stat of stats; track stat.label) {
+        <div class="stat-card">
+          <span class="stat-icon">{{ stat.icon }}</span>
+          <div class="stat-info">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+      <!-- Continue Learning -->
+      <section class="section courses-section">
+        <div class="section-header">
+          <h2>Continue Learning</h2>
+          <a href="#" class="view-all">View All →</a>
+        </div>
+        <div class="courses-grid">
+          @for (course of courses; track course.id) {
+            <article class="course-card">
+              <div class="course-thumbnail">
+                <img [src]="course.thumbnail" [alt]="course.title" />
+                <span class="course-category">{{ course.category }}</span>
+              </div>
+              <div class="course-info">
+                <h3>{{ course.title }}</h3>
+                <p class="instructor">by {{ course.instructor }}</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="course.progress"></div>
+                </div>
+                <span class="progress-text">{{ course.progress }}% complete</span>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+
+      <!-- Skills Overview -->
+      <section class="section skills-section">
+        <div class="section-header">
+          <h2>Your Skills</h2>
+          <a href="#" class="view-all">View All →</a>
+        </div>
+        <div class="skills-list">
+          @for (skill of skills; track skill.name) {
+            <div class="skill-item">
+              <div class="skill-header">
+                <span class="skill-name">{{ skill.name }}</span>
+                <span class="skill-level">{{ skill.level }}%</span>
+              </div>
+              <div class="skill-bar">
+                <div
+                  class="skill-fill"
+                  [style.width.%]="skill.level"
+                  [style.background]="skill.color"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  </main>
+</div>

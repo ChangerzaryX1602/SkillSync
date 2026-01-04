@@ -1,0 +1,84 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Welcome Back</h1>
+      <p>Sign in to your account</p>
+    </div>
+
+    @if (errorMessage()) {
+    <div class="error-banner" role="alert">
+      <span class="error-icon" aria-hidden="true">⚠</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="Enter your email"
+          autocomplete="email"
+          [attr.aria-invalid]="loginForm.controls.email.invalid && loginForm.controls.email.touched"
+          [attr.aria-describedby]="
+            loginForm.controls.email.invalid && loginForm.controls.email.touched
+              ? 'email-error'
+              : null
+          "
+        />
+        @if (loginForm.controls.email.invalid && loginForm.controls.email.touched) {
+        <span class="error-text" id="email-error">
+          @if (loginForm.controls.email.errors?.['required']) { Email is required } @else if
+          (loginForm.controls.email.errors?.['email']) { Please enter a valid email }
+        </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          [attr.aria-invalid]="
+            loginForm.controls.password.invalid && loginForm.controls.password.touched
+          "
+          [attr.aria-describedby]="
+            loginForm.controls.password.invalid && loginForm.controls.password.touched
+              ? 'password-error'
+              : null
+          "
+        />
+        @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
+        <span class="error-text" id="password-error">
+          @if (loginForm.controls.password.errors?.['required']) { Password is required } @else if
+          (loginForm.controls.password.errors?.['minlength']) { Password must be at least 6
+          characters }
+        </span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isLoading()"
+        [class.loading]="isLoading()"
+      >
+        @if (isLoading()) {
+        <span class="spinner" aria-hidden="true"></span>
+        Signing in... } @else { Sign In }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>
+        Don't have an account?
+        <a routerLink="/register">Create one</a>
+      </p>
+    </div>
+  </div>
+</div>

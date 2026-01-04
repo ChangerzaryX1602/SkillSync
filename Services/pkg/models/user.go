@@ -17,7 +17,6 @@ type User struct {
 	Embedding    pgvector.Vector `json:"-" gorm:"type:vector(1024)"`
 	CreatedAt    time.Time       `json:"created_at" gorm:"autoCreateTime" swaggerignore:"true"`
 	UpdatedAt    time.Time       `json:"updated_at" gorm:"autoUpdateTime" swaggerignore:"true"`
-	DeletedAt    gorm.DeletedAt  `json:"-" gorm:"index" swaggerignore:"true"`
 }
 
 func (u *User) GenerateSearchContext() string {

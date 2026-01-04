@@ -1,0 +1,180 @@
+<div class="users-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <a routerLink="/" class="back-link">← กลับหน้าหลัก</a>
+      <h1>จัดการผู้ใช้งาน</h1>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="openCreateDialog()">
+      <span>+</span> เพิ่มผู้ใช้งาน
+    </button>
+  </div>
+
+  <!-- Search -->
+  <app-search-box
+    placeholder="ค้นหาผู้ใช้งาน..."
+    (search)="onSearch($event)"
+  />
+
+  <!-- Table -->
+  <div class="table-container">
+    @if (isLoading()) {
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    }
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>ชื่อผู้ใช้</th>
+          <th>อีเมล</th>
+          <th>สร้างเมื่อ</th>
+          <th>การดำเนินการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ formatDate(user.created_at) }}</td>
+            <td class="actions">
+              <button type="button" class="btn-icon" title="บทบาท" (click)="openRoleDialog(user)">🎭</button>
+              <button type="button" class="btn-icon" title="แก้ไข" (click)="openEditDialog(user)">✏️</button>
+              <button type="button" class="btn-icon btn-danger" title="ลบ" (click)="openDeleteDialog(user)">🗑️</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="empty-state">ไม่พบข้อมูลผู้ใช้งาน</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  @if (pagination()) {
+    <div class="pagination-info">
+      <div class="per-page-selector">
+        <label for="per-page">แสดง</label>
+        <select id="per-page" [value]="perPage()" (change)="onPerPageChange($event)">
+          @for (option of perPageOptions; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+        <span>รายการ</span>
+      </div>
+     @if (totalPages() > 1) {
+        <app-pagination
+          [currentPage]="currentPage()"
+          [totalPages]="totalPages()"
+          (pageChange)="onPageChange($event)"
+        />
+      } @else {
+        <span class="page-info">หน้า {{ currentPage() }} จาก {{ totalPages() }}</span>
+      }
+      <span class="total-count">ทั้งหมด {{ pagination()?.total ?? 0 }} รายการ</span>
+    </div>
+  }
+</div>
+
+<!-- Create Dialog -->
+<app-dialog [isOpen]="isCreateDialogOpen()" title="เพิ่มผู้ใช้งานใหม่" (close)="closeCreateDialog()">
+  <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+    <div class="form-group">
+      <label for="create-username">ชื่อผู้ใช้</label>
+      <input id="create-username" type="text" formControlName="username" placeholder="กรอกชื่อผู้ใช้" />
+      @if (createForm.controls.username.touched && createForm.controls.username.errors) {
+        <span class="error">ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร</span>
+      }
+    </div>
+    <div class="form-group">
+      <label for="create-email">อีเมล</label>
+      <input id="create-email" type="email" formControlName="email" placeholder="กรอกอีเมล" />
+      @if (createForm.controls.email.touched && createForm.controls.email.errors) {
+        <span class="error">กรุณากรอกอีเมลให้ถูกต้อง</span>
+      }
+    </div>
+    <div class="form-group">
+      <label for="create-password">รหัสผ่าน</label>
+      <input id="create-password" type="password" formControlName="password" placeholder="กรอกรหัสผ่าน" />
+      @if (createForm.controls.password.touched && createForm.controls.password.errors) {
+        <span class="error">รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร</span>
+      }
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeCreateDialog()">ยกเลิก</button>
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+        @if (isSubmitting()) { กำลังบันทึก... } @else { บันทึก }
+      </button>
+    </div>
+  </form>
+</app-dialog>
+
+<!-- Edit Dialog -->
+<app-dialog [isOpen]="isEditDialogOpen()" title="แก้ไขผู้ใช้งาน" (close)="closeEditDialog()">
+  <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+    <div class="form-group">
+      <label for="edit-username">ชื่อผู้ใช้</label>
+      <input id="edit-username" type="text" formControlName="username" placeholder="กรอกชื่อผู้ใช้" />
+      @if (editForm.controls.username.touched && editForm.controls.username.errors) {
+        <span class="error">ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร</span>
+      }
+    </div>
+    <div class="form-group">
+      <label for="edit-email">อีเมล</label>
+      <input id="edit-email" type="email" formControlName="email" placeholder="กรอกอีเมล" />
+      @if (editForm.controls.email.touched && editForm.controls.email.errors) {
+        <span class="error">กรุณากรอกอีเมลให้ถูกต้อง</span>
+      }
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" (click)="closeEditDialog()">ยกเลิก</button>
+      <button type="submit" class="btn btn-primary" [disabled]="isSubmitting()">
+        @if (isSubmitting()) { กำลังบันทึก... } @else { บันทึก }
+      </button>
+    </div>
+  </form>
+</app-dialog>
+
+<!-- Delete Confirmation Dialog -->
+<app-dialog [isOpen]="isDeleteDialogOpen()" title="ยืนยันการลบ" (close)="closeDeleteDialog()">
+  <div class="confirm-content">
+    <p>คุณต้องการลบผู้ใช้งาน <strong>{{ selectedUser()?.username }}</strong> หรือไม่?</p>
+    <p class="warning">การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+  </div>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-secondary" (click)="closeDeleteDialog()">ยกเลิก</button>
+    <button type="button" class="btn btn-danger" [disabled]="isSubmitting()" (click)="confirmDelete()">
+      @if (isSubmitting()) { กำลังลบ... } @else { ลบ }
+    </button>
+  </div>
+</app-dialog>
+
+<!-- Role Management Dialog -->
+<app-dialog [isOpen]="isRoleDialogOpen()" title="จัดการบทบาท" (close)="closeRoleDialog()">
+  <div class="role-content">
+    <p class="role-user">ผู้ใช้: <strong>{{ selectedUser()?.username }}</strong></p>
+    <div class="role-list">
+      @for (role of roles(); track role.id) {
+        <label class="role-item">
+          <input
+            type="checkbox"
+            [checked]="hasRole(role.id)"
+            (change)="toggleRole(role.id)"
+          />
+          <span class="role-name">{{ role.name }}</span>
+        </label>
+      } @empty {
+        <p class="empty-state">ไม่พบบทบาท</p>
+      }
+    </div>
+  </div>
+  <div class="dialog-actions">
+    <button type="button" class="btn btn-secondary" (click)="closeRoleDialog()">ปิด</button>
+  </div>
+</app-dialog>
