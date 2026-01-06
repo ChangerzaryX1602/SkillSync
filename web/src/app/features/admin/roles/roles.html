@@ -19,7 +19,7 @@
   <div class="table-container">
     @if (isLoading()) {
       <div class="loading-overlay">
-        <div class="spinner"></div>
+        <app-loading text="Loading Roles..." [overlay]="false"></app-loading>
       </div>
     }
 

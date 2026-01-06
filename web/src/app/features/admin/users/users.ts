@@ -14,9 +14,18 @@ import { DialogComponent } from '../../../shared/dialog/dialog';
 import { SearchBoxComponent } from '../../../shared/search-box/search-box';
 import { PaginationComponent } from '../../../shared/pagination/pagination';
 
+import { LoadingComponent } from '../../../shared/components/loading/loading.component';
+
 @Component({
   selector: 'app-users',
-  imports: [ReactiveFormsModule, RouterLink, DialogComponent, SearchBoxComponent, PaginationComponent],
+  standalone: true,
+  imports: [
+    ReactiveFormsModule,
+    SearchBoxComponent,
+    PaginationComponent,
+    DialogComponent,
+    LoadingComponent
+  ],
   templateUrl: './users.html',
   styleUrl: './users.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

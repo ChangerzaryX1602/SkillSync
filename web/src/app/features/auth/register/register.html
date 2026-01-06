@@ -1,5 +1,5 @@
 <div class="auth-container">
-  <div class="auth-card">
+<div class="auth-card" appTilt [maxTilt]="5" [perspective]="1500" [scale]="1.02">
     <div class="auth-header">
       <h1>สร้างบัญชีใหม่</h1>
       <p>เข้าร่วมชุมชนแห่งการเรียนรู้กับเรา</p>
@@ -93,8 +93,10 @@
         [class.loading]="isLoading()"
       >
         @if (isLoading()) {
-          <span class="spinner" aria-hidden="true"></span>
-          กำลังสร้างบัญชี...
+          <div style="display: flex; align-items: center; gap: 0.5rem">
+            <app-loading text="" [overlay]="false" style="transform: scale(0.4);"></app-loading>
+            <span>กำลังสร้างบัญชี...</span>
+          </div>
         } @else {
           สมัครสมาชิก
         }

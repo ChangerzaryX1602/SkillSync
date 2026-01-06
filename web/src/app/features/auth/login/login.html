@@ -1,5 +1,5 @@
 <div class="auth-container">
-  <div class="auth-card">
+<div class="auth-card" appTilt [maxTilt]="5" [perspective]="1500" [scale]="1.02">
     <div class="auth-header">
       <h1>ยินดีต้อนรับกลับ</h1>
       <p>เข้าสู่ระบบเพื่อใช้งานบัญชีของคุณ</p>
@@ -68,8 +68,13 @@
         [class.loading]="isLoading()"
       >
         @if (isLoading()) {
-        <span class="spinner" aria-hidden="true"></span>
-        กำลังเข้าสู่ระบบ... } @else { เข้าสู่ระบบ }
+          <div style="display: flex; align-items: center; gap: 0.5rem">
+            <app-loading text="" [overlay]="false" style="transform: scale(0.4);"></app-loading>
+            <span>กำลังเข้าสู่ระบบ...</span>
+          </div>
+        } @else {
+          เข้าสู่ระบบ
+        }
       </button>
     </form>
 

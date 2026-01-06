@@ -1,15 +1,18 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { UserService } from '../../core/services/user.service';
+import { TiltDirective } from '../../shared/directives/tilt.directive';
+import { LoadingComponent } from '../../shared/components/loading/loading.component';
 
 @Component({
   selector: 'app-home',
-  imports: [],
+  imports: [TiltDirective, LoadingComponent],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit {
   private readonly userService = inject(UserService);
+  protected readonly isLoading = signal(true);
 
   protected readonly skills = [
     { name: 'TypeScript', level: 85, color: '#3178c6' },
@@ -54,6 +57,11 @@ export class HomeComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.userService.fetchCurrentUser().subscribe();
+    this.userService.fetchCurrentUser().subscribe({
+      next: () => this.isLoading.set(false),
+      error: () => this.isLoading.set(false)
+    });
+    // Simulate initial load for effect
+    setTimeout(() => this.isLoading.set(false), 1500);
   }
 }

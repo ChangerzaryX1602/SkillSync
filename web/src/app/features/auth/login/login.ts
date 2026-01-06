@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
+import { LoadingComponent } from '../../../shared/components/loading/loading.component';
+import { TiltDirective } from '../../../shared/directives/tilt.directive';
 
 interface ApiError {
   code: number;
@@ -18,7 +20,8 @@ interface ApiErrorResponse {
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink],
+  standalone: true,
+  imports: [ReactiveFormsModule, RouterLink, TiltDirective, LoadingComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

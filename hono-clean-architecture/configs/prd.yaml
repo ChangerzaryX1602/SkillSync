@@ -1,0 +1,32 @@
+app:
+  name: "hono-skeleton"
+  env: "production"
+  port:
+    http: 8080
+    https: 8443
+  path:
+    cert: "./internal/assets/prd/tls/zercle-dev.crt"
+    priv: "./internal/assets/prd/tls/zercle-dev.key"
+    ca: "./internal/assets/prd/tls/rootCA.crt"
+    log: "./log"
+db:
+  postgres:
+    sock: "/var/run/postgresql"
+    host: "localhost"
+    port: 5432
+    username: "postgres"
+    password: ""
+    db_name: "postgres"
+    conn:
+      min: 1
+      max: 20
+  redis:
+    host: "localhost"
+    port: 6379
+    username: ""
+    password: ""
+    db_name: 0
+
+jwt:
+  private: "./internal/assets/prd/jwt/privkey.pem"
+  public: "./internal/assets/prd/jwt/pubkey.pem"

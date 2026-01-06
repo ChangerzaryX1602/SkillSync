@@ -14,9 +14,18 @@ import { DialogComponent } from '../../../shared/dialog/dialog';
 import { SearchBoxComponent } from '../../../shared/search-box/search-box';
 import { PaginationComponent } from '../../../shared/pagination/pagination';
 
+import { LoadingComponent } from '../../../shared/components/loading/loading.component';
+
 @Component({
   selector: 'app-roles',
-  imports: [ReactiveFormsModule, RouterLink, DialogComponent, SearchBoxComponent, PaginationComponent],
+  standalone: true,
+  imports: [
+    ReactiveFormsModule,
+    DialogComponent,
+    SearchBoxComponent,
+    PaginationComponent,
+    LoadingComponent
+  ],
   templateUrl: './roles.html',
   styleUrl: './roles.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
