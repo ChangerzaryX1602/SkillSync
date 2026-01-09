@@ -61,7 +61,14 @@ export async function setupRoutes(
   const permissionService = newPermissionService(permissionRepository);
   const rolePermissionService = newRolePermissionService(rolePermissionRepository);
   const userRoleService = newUserRoleService(userRoleRepository);
-  const authService = newAuthService(authRepository, userService);
+  const authService = newAuthService(
+    authRepository,
+    userService,
+    userRoleRepository,
+    rolePermissionRepository,
+    roleRepository,
+    permissionRepository
+  );
 
   newUserHandler(apiV1, routerResources, userService);
   newRoleHandler(apiV1, routerResources, roleService);

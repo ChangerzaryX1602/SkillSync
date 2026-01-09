@@ -1,6 +1,14 @@
 import bcrypt from "bcryptjs";
 import { UserResponse } from "../models";
-import { AuthRepository, AuthService as IAuthService, UserService } from "../domain";
+import {
+  AuthRepository,
+  AuthService as IAuthService,
+  UserService,
+  UserRoleRepository,
+  RolePermissionRepository,
+  RoleRepository,
+  PermissionRepository,
+} from "../domain";
 import { ResponseError, createError, whereAmI } from "../../internal/infrastructure/custom_error";
 import { isValidEmail } from "../utils";
 
@@ -10,10 +18,64 @@ const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
 export class AuthService implements IAuthService {
   private repository: AuthRepository;
   private userService: UserService;
+  private userRoleRepository: UserRoleRepository;
+  private rolePermissionRepository: RolePermissionRepository;
+  private roleRepository: RoleRepository;
+  private permissionRepository: PermissionRepository;
 
-  constructor(repository: AuthRepository, userService: UserService) {
+  constructor(
+    repository: AuthRepository,
+    userService: UserService,
+    userRoleRepository: UserRoleRepository,
+    rolePermissionRepository: RolePermissionRepository,
+    roleRepository: RoleRepository,
+    permissionRepository: PermissionRepository
+  ) {
     this.repository = repository;
     this.userService = userService;
+    this.userRoleRepository = userRoleRepository;
+    this.rolePermissionRepository = rolePermissionRepository;
+    this.roleRepository = roleRepository;
+    this.permissionRepository = permissionRepository;
+  }
+
+  private async getUserRolesAndPermissions(
+    userId: number
+  ): Promise<{ roles: string[]; permissions: string[]; errors: ResponseError[] }> {
+    const { userRoles, error: userRolesError } =
+      await this.userRoleRepository.getUserRolesByUserId(userId);
+
+    if (userRolesError) {
+      return { roles: [], permissions: [], errors: [userRolesError] };
+    }
+
+    const roles: string[] = [];
+    const permissionSet = new Set<string>();
+
+    for (const userRole of userRoles) {
+      const { role, error: roleError } = await this.roleRepository.getRole(userRole.roleId);
+      if (roleError || !role) {
+        continue;
+      }
+      roles.push(role.name);
+
+      const { rolePermissions, error: rpError } =
+        await this.rolePermissionRepository.getRolePermissionsByRoleId(role.id);
+      if (rpError) {
+        continue;
+      }
+
+      for (const rp of rolePermissions) {
+        const { permission, error: permError } = await this.permissionRepository.getPermission(
+          rp.permissionId
+        );
+        if (!permError && permission) {
+          permissionSet.add(`${permission.group}:${permission.name}`);
+        }
+      }
+    }
+
+    return { roles, permissions: Array.from(permissionSet), errors: [] };
   }
 
   async register(userData: {
@@ -62,10 +124,19 @@ export class AuthService implements IAuthService {
       };
     }
 
+    const { roles, permissions, errors: rbacErrors } = await this.getUserRolesAndPermissions(
+      user.id
+    );
+    if (rbacErrors.length > 0) {
+      return { accessToken: null, refreshToken: null, errors: rbacErrors };
+    }
+
     const { token: accessToken, error: accessTokenError } = await this.repository.signToken(
       user,
       host,
-      ACCESS_TOKEN_TTL
+      ACCESS_TOKEN_TTL,
+      roles,
+      permissions
     );
     if (accessTokenError) {
       return {
@@ -78,7 +149,9 @@ export class AuthService implements IAuthService {
     const { token: refreshToken, error: refreshTokenError } = await this.repository.signToken(
       user,
       host,
-      REFRESH_TOKEN_TTL
+      REFRESH_TOKEN_TTL,
+      roles,
+      permissions
     );
     if (refreshTokenError) {
       return {
@@ -158,10 +231,19 @@ export class AuthService implements IAuthService {
 
     const host = payload.iss || "";
 
+    const { roles, permissions, errors: rbacErrors } = await this.getUserRolesAndPermissions(
+      user.id
+    );
+    if (rbacErrors.length > 0) {
+      return { accessToken: null, refreshToken: null, errors: rbacErrors };
+    }
+
     const { token: newAccessToken, error: accessTokenError } = await this.repository.signToken(
       user,
       host,
-      ACCESS_TOKEN_TTL
+      ACCESS_TOKEN_TTL,
+      roles,
+      permissions
     );
     if (accessTokenError) {
       return {
@@ -174,7 +256,9 @@ export class AuthService implements IAuthService {
     const { token: newRefreshToken, error: refreshTokenError } = await this.repository.signToken(
       user,
       host,
-      REFRESH_TOKEN_TTL
+      REFRESH_TOKEN_TTL,
+      roles,
+      permissions
     );
     if (refreshTokenError) {
       return {
@@ -207,6 +291,20 @@ export class AuthService implements IAuthService {
   }
 }
 
-export function newAuthService(repository: AuthRepository, userService: UserService): IAuthService {
-  return new AuthService(repository, userService);
+export function newAuthService(
+  repository: AuthRepository,
+  userService: UserService,
+  userRoleRepository: UserRoleRepository,
+  rolePermissionRepository: RolePermissionRepository,
+  roleRepository: RoleRepository,
+  permissionRepository: PermissionRepository
+): IAuthService {
+  return new AuthService(
+    repository,
+    userService,
+    userRoleRepository,
+    rolePermissionRepository,
+    roleRepository,
+    permissionRepository
+  );
 }

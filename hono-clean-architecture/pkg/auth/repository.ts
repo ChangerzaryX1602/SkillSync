@@ -17,7 +17,9 @@ export class AuthRepository implements IAuthRepository {
   async signToken(
     user: User | UserResponse,
     host: string,
-    ttlSeconds: number
+    ttlSeconds: number,
+    roles: string[] = [],
+    permissions: string[] = []
   ): Promise<{ token: string | null; error: ResponseError | null }> {
     try {
       const now = Math.floor(Date.now() / 1000);
@@ -26,6 +28,8 @@ export class AuthRepository implements IAuthRepository {
         iss: host,
         exp: now + ttlSeconds,
         iat: now,
+        roles,
+        permissions,
       };
 
       const token = await signJwt(this.jwtResources, payload);

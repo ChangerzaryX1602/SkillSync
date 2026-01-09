@@ -6,7 +6,9 @@ export interface AuthRepository {
   signToken(
     user: User | UserResponse,
     host: string,
-    ttlSeconds: number
+    ttlSeconds: number,
+    roles: string[],
+    permissions: string[]
   ): Promise<{ token: string | null; error: ResponseError | null }>;
   saveRefreshToken(
     userId: number,
